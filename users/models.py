@@ -2,6 +2,7 @@ from datetime import date
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from phonenumber_field.modelfields import PhoneNumberField
 
 
 class UserManager(BaseUserManager):
@@ -35,7 +36,7 @@ class CustomUser(AbstractUser):
     gender = models.CharField(
         max_length=20, choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")), default="P"
     )
-    phone_number = models.CharField(max_length=20)
+    phone_number = PhoneNumberField(blank=True, null=False)
     photo = models.ImageField(upload_to="photos", null=True, blank=True)
     followers_count = models.IntegerField(default=0)
     followings_count = models.IntegerField(default=0)

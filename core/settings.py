@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "app.apps.AppConfig",
     "users.apps.UsersConfig",
     "API.apps.ApiConfig",
+    'phonenumber_field',
     # DJANGO BASE
     "django.contrib.admin",
     "django.contrib.auth",
@@ -84,7 +85,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "fpbp",
         "USER": "postgres",
-        "PASSWORD": "password",
+        "PASSWORD": "postgres",
         "HOST": "localhost",
         "PORT": "5432",
     }

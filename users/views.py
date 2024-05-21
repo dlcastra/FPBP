@@ -9,4 +9,6 @@ def register(request):
         if form.is_valid():
             form.save()
             return HttpResponse("OK")
+        else:
+            HttpResponse("Form is not invalid")
     return render(request, "register.html", {"form": CustomUserCreationForm()})

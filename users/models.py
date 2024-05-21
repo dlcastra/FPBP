@@ -35,6 +35,7 @@ class CustomUser(AbstractUser):
         max_length=20, choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")), default="P"
     )
     phone_number = models.CharField(max_length=20)
+    photo = models.ImageField(upload_to="photos", null=True, blank=True)
     followers_count = models.IntegerField(default=0)
     followings_count = models.IntegerField(default=0)
     objects = UserManager()

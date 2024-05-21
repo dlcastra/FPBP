@@ -5,24 +5,33 @@ from .models import CustomUser
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = (
-        'email', 'username', 'is_staff', 'is_active', 'birthday', 'gender', 'phone_number', 'followers_count',
-        'followings_count')
-    list_filter = ('is_staff', 'is_active', 'gender')
+    list_display = ("email", "is_staff", "is_active")
+    list_filter = ("email", "is_staff", "is_active")
+
     fieldsets = (
-        (None, {'fields': ('email', 'password', 'username')}),
-        ('Personal Info', {'fields': ('birthday', 'gender', 'phone_number', 'photo')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Counts', {'fields': ('followers_count', 'followings_count')}),
+        (None,
+         {"fields": ("username", "first_name", "last_name", "email", "birthday", "gender", "phone_number", "photo")}),
+        ("Permissions", {"fields": ("is_staff", "is_active", "groups", "user_permissions")}),
     )
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'is_staff', 'is_active')}
-         ),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": (
+                    "email",
+                    "password",
+                    "confirm_password",
+                    "is_staff",
+                    "is_active",
+                    "groups",
+                    "user_permissions",
+                ),
+            },
+        ),
     )
-    search_fields = ('email', 'username')
-    ordering = ('email',)
+    search_fields = ("email",)
+    ordering = ("email",)
 
 
 admin.site.register(CustomUser, CustomUserAdmin)

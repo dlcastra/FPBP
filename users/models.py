@@ -33,12 +33,18 @@ class UserManager(BaseUserManager):
 class CustomUser(AbstractUser):
     birthday = models.DateField(blank=True, null=True)
     gender = models.CharField(
-        max_length=20, choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")), default="M")
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+        max_length=20, choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")), default="M"
+    )
+    phone_number = models.CharField(max_length=15, blank=True, null=True)  # Added max_length and nullable fields
+    first_name = models.CharField(max_length=50)
+    last_name = models.CharField(max_length=50)
     photo = models.ImageField(upload_to="photos", null=True, blank=True)
     followers_count = models.IntegerField(default=0)
     followings_count = models.IntegerField(default=0)
-    objects = UserManager()
+
+    # Add related_name to prevent conflicts
+    groups = models.ManyToManyField("auth.Group", related_name="custom_user_groups")
+    user_permissions = models.ManyToManyField("auth.Permission", related_name="custom_user_permissions")
 
     def __str__(self):
         return self.username

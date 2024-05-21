@@ -1,5 +1,4 @@
 from django.http import HttpResponse
-
 from .forms import CustomUserCreationForm
 from django.shortcuts import render
 

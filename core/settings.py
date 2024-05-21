@@ -10,9 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 from django.contrib.messages import api
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,7 +87,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "fpbp",
         "USER": "postgres",
-        "PASSWORD": "postgres",
+        "PASSWORD": config("POSTGRES_PASSWORD"),
         "HOST": "localhost",
         "PORT": "5432",
     }

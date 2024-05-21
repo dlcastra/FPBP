@@ -3,15 +3,11 @@ name: Lint
 on: [push, pull_request]
 
 jobs:
-  format-and-lint:
+
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      # Step to format the code with black
-      - name: Run black formatter
-        run: black . -l 120
-
-      # Step to lint the code with black
-      - name: Check formatting with black
-        run: black . -l 120 --check --diff
+      - uses: psf/black@stable
+        with:
+          options: "--check --diff -l 120"

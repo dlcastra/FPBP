@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     "app.apps.AppConfig",
     "users.apps.UsersConfig",
     "API.apps.ApiConfig",
-    'phonenumber_field',
+    "phonenumber_field",
     # DJANGO BASE
     "django.contrib.admin",
     "django.contrib.auth",

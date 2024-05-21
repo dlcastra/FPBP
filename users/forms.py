@@ -4,8 +4,9 @@ from users.models import CustomUser
 
 
 class CustomUserCreationForm(UserCreationForm):
-    birthday = forms.DateField(required=True, widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
-                               input_formats=["%Y-%m-%d"])
+    birthday = forms.DateField(
+        required=True, widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}), input_formats=["%Y-%m-%d"]
+    )
 
     class Meta(UserCreationForm.Meta):
         model = CustomUser

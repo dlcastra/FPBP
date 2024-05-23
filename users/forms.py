@@ -48,3 +48,4 @@ class CustomUserCreationForm(UserCreationForm):
         if password and password_confirmation and password != password_confirmation:
             self.add_error("password2", "Passwords must match.")
         return cleaned_data
+

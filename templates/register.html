@@ -5,7 +5,10 @@
     <title>Title</title>
 </head>
 <body>
-<form method="post">{% csrf_token %}{{ form.as_p }}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {{ form.phone_number.default_error_messages }}
     <input type="submit" value="Ok">
 </form>
 

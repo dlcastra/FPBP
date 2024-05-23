@@ -68,4 +68,5 @@ class CustomLoginView(LoginView):
         else:
             return "/login/"
 
+
 # ==================================

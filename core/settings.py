@@ -138,3 +138,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+# Celery Configuration
+CELERY_BROKER_URL = "pyamqp://celeryuser:celeryuser@rabbitmq:5672//"
+CELERY_RESULT_BACKEND = "rpc://"
+
+# Email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_USE_TLS = True
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = config("DEFAULT_FROM_EMAIL")
+EMAIL_HOST_PASSWORD = config("EMAIL_SECRET_KEY")
+EMAIL_PORT = 587
+DEFAULT_FROM_EMAIL = f"Celery <{EMAIL_HOST_USER}>"

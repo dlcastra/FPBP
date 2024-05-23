@@ -1,21 +1,16 @@
 from celery import shared_task
 from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
-from django.core.signing import Signer, BadSignature
 from django.views import View
-
+from django.core.signing import Signer, BadSignature
+from django.shortcuts import render, redirect
 from core.settings import EMAIL_HOST_USER
 from .forms import CustomUserCreationForm
-from django.shortcuts import render, redirect
-
 from .models import CustomUser
 
 
-# Activation mail sender
 @shared_task
-def send_activation_email(request, user_id):
-    user_signed = Signer().sign(user_id)
-    signed_url = request.build_absolute_uri(f"/activate/{user_signed}")
+def send_activation_email(signed_url, user_id):
     send_mail(
         subject="Registration complete",
         message=("Click here to activate your account: " + signed_url),
@@ -56,7 +51,9 @@ class RegisterView(View):
         if form.is_valid():
             form.instance.is_active = False
             form.save()
-            send_activation_email(self.request, form.instance.id)
+            user_signed = Signer().sign(form.instance.id)
+            signed_url = request.build_absolute_uri(f"/activate/{user_signed}")
+            send_activation_email.delay(signed_url, form.instance.id)
             return redirect(self.success_url)
         else:
             return render(request, self.template_name, {"form": form})
@@ -70,6 +67,5 @@ class CustomLoginView(LoginView):
             return "/"
         else:
             return "/login/"
-
 
 # ==================================

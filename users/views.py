@@ -1,14 +1,21 @@
-from django.http import HttpResponse
+from django.views import View
 from .forms import CustomUserCreationForm
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 
-def register(request):
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
+class RegisterView(View):
+    form_class = CustomUserCreationForm
+    template_name = "register.html"
+    success_url = "/"
+
+    def get(self, request):
+        form = self.form_class()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        form = self.form_class(request.POST)
         if form.is_valid():
             form.save()
-            return HttpResponse("OK")
+            return redirect(self.success_url)
         else:
-            HttpResponse("Form is not invalid")
-    return render(request, "register.html", {"form": CustomUserCreationForm()})
+            return render(request, self.template_name, {"form": form})

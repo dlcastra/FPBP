@@ -8,7 +8,7 @@
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    {{ form.phone_number.default_error_messages }}
+    {{ message }}
     <input type="submit" value="Ok">
 </form>
 

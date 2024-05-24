@@ -52,7 +52,7 @@ class CustomUserCreationForm(UserCreationForm):
 
 class CustomUserChangeForm(UserChangeForm):
     username = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "Username"}))
-    first_name = forms.CharField(required=True, widget=forms.TextInput())
+    first_name = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "First Name"}))
     last_name = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "Last Name"}))
     birthday = forms.DateField(
         required=False,

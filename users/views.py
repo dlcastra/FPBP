@@ -1,4 +1,7 @@
+from allauth.account.views import logout as allauth_logout
+from allauth.socialaccount.models import SocialAccount
 from celery import shared_task
+from django.contrib.auth import logout
 from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.views import View
@@ -87,6 +90,14 @@ class CustomAllAuthAccountCreationView(View):
             return redirect(self.success_url)
         else:
             return render(request, self.template_name, {"form": form})
+
+
+def logout_view(request):
+    user = request.user
+    if SocialAccount.objects.filter(user=user).exists():
+        allauth_logout(request, user)
+    logout(request)
+    return redirect("/")
 
 
 # ==================================

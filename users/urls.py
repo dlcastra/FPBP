@@ -1,5 +1,5 @@
 from django.urls import path
-
+from allauth.socialaccount.providers.google import urls
 from users import views
 
 urlpatterns = [

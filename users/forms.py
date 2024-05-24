@@ -10,13 +10,13 @@ class CustomUserCreationForm(UserCreationForm):
     first_name = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "First Name"}))
     last_name = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "Last Name"}))
     birthday = forms.DateField(
-        required=True,
+        required=False,
         widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
         input_formats=["%Y-%m-%d"],
     )
     email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={"placeholder": "Email"}))
     phone_number = PhoneNumberField(
-        required=True,
+        required=False,
         widget=PhoneNumberPrefixWidget(),
     )
     password1 = forms.CharField(

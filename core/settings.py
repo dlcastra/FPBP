@@ -45,8 +45,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     # TOOLS AND FRAMEWORKS
     "rest_framework",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.github",
 ]
 
 MIDDLEWARE = [
@@ -57,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -126,7 +133,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = "static/"
-MEDIA_ROOT = BASE_DIR / "media"
+
+# Media files
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -140,8 +150,13 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # Celery Configuration
-CELERY_BROKER_URL = "pyamqp://celeryuser:celeryuser@rabbitmq:5672//"
-CELERY_RESULT_BACKEND = "rpc://"
+CELERY_BROKER_URL = "amqp://guest@localhost:5672//"
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+CELERY_TASK_BACKEND = "rpc://"
 
 # Email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -151,3 +166,25 @@ EMAIL_HOST_USER = config("DEFAULT_FROM_EMAIL")
 EMAIL_HOST_PASSWORD = config("EMAIL_SECRET_KEY")
 EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = f"Celery <{EMAIL_HOST_USER}>"
+
+# AllAuth config
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "FETCH_USERINFO": True,
+        "SCOPE": ["profile", "email"],
+        "APP": {
+            "client_id": config("GOOGLE_CLIENT_ID"),
+            "secret": config("GOOGLE_CLIENT_SECRET"),
+        },
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+    },
+    "github": {"APP": {"client_id": config("GITHUB_CLIENT_ID"), "secret": config("GITHUB_SECRET"), "key": ""}},
+}
+
+SITE_ID = 2
+
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+SOCIALACCOUNT_LOGIN_ON_GET = True

@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
 from users.models import CustomUser
@@ -48,3 +48,36 @@ class CustomUserCreationForm(UserCreationForm):
         if password and password_confirmation and password != password_confirmation:
             self.add_error("password2", "Passwords must match.")
         return cleaned_data
+
+
+class CustomUserChangeForm(UserChangeForm):
+    username = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "Username"}))
+    first_name = forms.CharField(required=True, widget=forms.TextInput())
+    last_name = forms.CharField(required=True, widget=forms.TextInput(attrs={"placeholder": "Last Name"}))
+    birthday = forms.DateField(
+        required=False,
+        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
+        input_formats=["%Y-%m-%d"],
+    )
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={"placeholder": "Email"}))
+    phone_number = PhoneNumberField(
+        required=False,
+        widget=PhoneNumberPrefixWidget(),
+    )
+    password = forms.CharField(
+        required=True, widget=forms.PasswordInput(attrs={"placeholder": "Password"}), label="Password"
+    )
+
+    class Meta(UserChangeForm.Meta):
+        model = CustomUser
+        fields = (
+            "username",
+            "first_name",
+            "last_name",
+            "photo",
+            "birthday",
+            "gender",
+            "phone_number",
+            "email",
+            "password",
+        )

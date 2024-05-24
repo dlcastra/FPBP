@@ -5,7 +5,7 @@ from django.views import View
 from django.core.signing import Signer, BadSignature
 from django.shortcuts import render, redirect
 from core.settings import EMAIL_HOST_USER
-from .forms import CustomUserCreationForm
+from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
 
 
@@ -68,5 +68,24 @@ class CustomLoginView(LoginView):
         else:
             return "/login/"
 
+
+class CustomAllAuthAccountCreationView(View):
+    form_class = CustomUserChangeForm
+    template_name = "registration/end_of_registration.html"
+    success_url = "/"
+
+    def get(self, request):
+        form = self.form_class(instance=CustomUser.objects.get(id=request.user.id))
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        form = self.form_class(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save(commit=False)
+            user = CustomUser.objects.get(id=request.user.id)
+            user.set_password(form.cleaned_data["password"])
+            return redirect(self.success_url)
+        else:
+            return render(request, self.template_name, {"form": form})
 
 # ==================================

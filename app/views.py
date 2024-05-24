@@ -110,9 +110,8 @@ class ThreadDetailView(DetailView):
 
             instance.save()
             form.save()
-            return redirect('detail', pk=instance.pk)
+            return redirect("detail", pk=instance.pk)
 
         context = self.get_context_data(request, **kwargs)
-        context['form'] = form
+        context["form"] = form
         return render(request, self.template_name, context)
-

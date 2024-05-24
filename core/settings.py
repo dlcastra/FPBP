@@ -45,8 +45,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     # TOOLS AND FRAMEWORKS
     "rest_framework",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    'allauth.socialaccount.providers.github',
 ]
 
 MIDDLEWARE = [
@@ -57,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -159,3 +166,34 @@ EMAIL_HOST_USER = config("DEFAULT_FROM_EMAIL")
 EMAIL_HOST_PASSWORD = config("EMAIL_SECRET_KEY")
 EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = f"Celery <{EMAIL_HOST_USER}>"
+
+# AllAuth config
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'FETCH_USERINFO': True,
+        'SCOPE': [
+            'profile',
+            'email'
+        ],
+        'APP': {
+            'client_id': config("GOOGLE_CLIENT_ID"),
+            'secret': config("GOOGLE_CLIENT_SECRET"),
+        },
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    },
+    'github': {
+        'APP': {
+            'client_id': config("GITHUB_CLIENT_ID"),
+            'secret': config("GITHUB_SECRET"),
+            'key': ''
+        }
+    }
+}
+
+SITE_ID = 2
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+SOCIALACCOUNT_LOGIN_ON_GET = True

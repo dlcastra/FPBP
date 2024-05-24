@@ -32,13 +32,13 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser):
-    birthday = models.DateField()
+    birthday = models.DateField(default=date.today, )
     gender = models.CharField(
         max_length=20,
         choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")),
         default="P",
     )
-    phone_number = PhoneNumberField(blank=True, null=False)
+    phone_number = PhoneNumberField(blank=True, null=True)
     photo = models.ImageField(upload_to="photos/", null=True, blank=True)
     followers_count = models.IntegerField(default=0)
     followings_count = models.IntegerField(default=0)

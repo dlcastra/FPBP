@@ -1,3 +1,4 @@
+{% load socialaccount %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +12,10 @@
     {{ message }}
     <input type="submit" value="Ok">
 </form>
+
+
+   <a href="{% provider_login_url 'google' %}">Login via Google</a><br>
+   <a href="{% provider_login_url 'github' %}">Login via GitHub</a>
 
 </body>
 </html>

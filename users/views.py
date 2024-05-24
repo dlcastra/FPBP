@@ -88,4 +88,5 @@ class CustomAllAuthAccountCreationView(View):
         else:
             return render(request, self.template_name, {"form": form})
 
+
 # ==================================

@@ -32,7 +32,9 @@ class UserManager(BaseUserManager):
 
 
 class CustomUser(AbstractUser):
-    birthday = models.DateField(default=date.today, )
+    birthday = models.DateField(
+        default=date.today,
+    )
     gender = models.CharField(
         max_length=20,
         choices=(("M", "Male"), ("F", "Female"), ("P", "Preferred not to say")),

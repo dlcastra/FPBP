@@ -185,6 +185,10 @@ SOCIALACCOUNT_PROVIDERS = {
 
 SITE_ID = 2
 
-LOGIN_REDIRECT_URL = "/register/end_registration/"
+LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_LOGIN_ON_GET = True
+ACCOUNT_FORMS = {
+    "signup": "users.forms.CustomUserCreationForm",
+    "change_password": "users.forms.CustomPasswordChangeForm",
+}

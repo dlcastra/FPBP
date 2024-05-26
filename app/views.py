@@ -4,7 +4,7 @@ from django.views.generic import TemplateView, DetailView
 
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from .models import Thread
+from .models import Thread, TutorialSection, ProgrammingLanguage
 
 
 # TEMPLATE VIEWS
@@ -22,14 +22,28 @@ class MainPageView(View):
         return context
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name)
+        languages = ProgrammingLanguage.objects.all()
+        return render(request, self.template_name, {'languages': languages})
+
+
+class TutorialPageView(View):
+    template_name = "tutorials/index.html"
+
+    def get(self, request, slug, *args, **kwargs):
+        language = get_object_or_404(ProgrammingLanguage, slug=slug)
+        sections = TutorialSection.objects.filter(language=language)
+        context = {
+            'language': language,
+            'sections': sections
+        }
+        return render(request, self.template_name, context)
 
 
 class ThreadsPageView(View):
     template_name = "threads/all_threads/threads_page.html"
 
     def get_context_data(self, request):
-        threads = Thread.objects.all()
+        threads = Thread.objects.order_by("-id")
         context = {"threads": threads}
 
         return context

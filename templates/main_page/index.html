@@ -13,5 +13,12 @@
     <a href="accounts/logout/">Sign Out</a>
 {% endif %}
 <label>ok</label>
+
+<h1>Programming Languages</h1>
+<ul>
+    {% for language in languages %}
+        <li><a href="{% url 'tutorials' language.slug %}">{{ language.name }}</a></li>
+    {% endfor %}
+</ul>
 </body>
 </html>

@@ -1,10 +1,9 @@
-
 <body>
 <label>Change data</label>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <a href="/accounts/password/change/">Click here to change password</a><br>
+    <a href="/change-password/">Click here to change or set password</a><br>
     <input type="submit" value="Ok">
 
 </form>

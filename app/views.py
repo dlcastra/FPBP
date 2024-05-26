@@ -23,7 +23,7 @@ class MainPageView(View):
 
     def get(self, request, *args, **kwargs):
         languages = ProgrammingLanguage.objects.all()
-        return render(request, self.template_name, {'languages': languages})
+        return render(request, self.template_name, {"languages": languages})
 
 
 class TutorialPageView(View):
@@ -32,10 +32,7 @@ class TutorialPageView(View):
     def get(self, request, slug, *args, **kwargs):
         language = get_object_or_404(ProgrammingLanguage, slug=slug)
         sections = TutorialSection.objects.filter(language=language)
-        context = {
-            'language': language,
-            'sections': sections
-        }
+        context = {"language": language, "sections": sections}
         return render(request, self.template_name, context)
 
 

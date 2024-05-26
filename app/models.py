@@ -20,13 +20,13 @@ class ProgrammingLanguage(models.Model):
 
 
 class TutorialSection(models.Model):
-    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE, related_name='sections')
+    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE, related_name="sections")
     title = models.CharField(max_length=200)
     content = models.TextField()
     order = models.IntegerField()
 
     class Meta:
-        ordering = ['order']
+        ordering = ["order"]
 
     def __str__(self):
         return f"{self.language.name} - {self.title}"

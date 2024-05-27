@@ -17,11 +17,11 @@ class CustomUserChangeView(LoginRequiredMixin, View):
     def get(self, request):
         form = self.form_class(instance=request.user)
         connections = SocialAccount.objects.filter(user_id=request.user.id)
-        connected_provider_ids = connections.values_list('provider', flat=True)
+        connected_provider_ids = connections.values_list("provider", flat=True)
         return render(
             request,
             self.template_name,
-            {"form": form, "connections": connections, "connected_provider_ids": connected_provider_ids}
+            {"form": form, "connections": connections, "connected_provider_ids": connected_provider_ids},
         )
 
     def post(self, request):
@@ -31,11 +31,11 @@ class CustomUserChangeView(LoginRequiredMixin, View):
             return redirect(self.success_url)
         else:
             connections = SocialAccount.objects.filter(user_id=request.user.id)
-            connected_provider_ids = connections.values_list('provider', flat=True)
+            connected_provider_ids = connections.values_list("provider", flat=True)
             return render(
                 request,
                 self.template_name,
-                {"form": form, "connections": connections, "connected_provider_ids": connected_provider_ids}
+                {"form": form, "connections": connections, "connected_provider_ids": connected_provider_ids},
             )
 
 
@@ -44,13 +44,13 @@ class CustomUserChangeView(LoginRequiredMixin, View):
 
 @login_required
 def disconnect_account(request, provider):
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             account = SocialAccount.objects.get(user=request.user, provider=provider)
             account.delete()
-            return JsonResponse({'success': True})
+            return JsonResponse({"success": True})
         except SocialAccount.DoesNotExist:
-            return JsonResponse({'error': 'Account not found.'}, status=404)
+            return JsonResponse({"error": "Account not found."}, status=404)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    return JsonResponse({'error': 'Invalid request method.'}, status=400)
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Invalid request method."}, status=400)

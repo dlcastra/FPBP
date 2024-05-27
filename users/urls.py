@@ -27,9 +27,7 @@ urlpatterns = [
     path(
         "accounts/github/login/callback/", include("allauth.socialaccount.providers.github.urls"), name="github_login"
     ),
-    path(
-        "accounts/", include("allauth.socialaccount.providers.google.urls"), name="google_login"
-    ),
+    path("accounts/", include("allauth.socialaccount.providers.google.urls"), name="google_login"),
     path("end-login3p/", socialaccount_views.SignupView.as_view(), name="socialaccount_signup"),
     path("confirm-email/<key>/", account_views.ConfirmEmailView.as_view(), name="account_confirm_email"),
     # path("change-data/connections/", socialaccount_views.ConnectionsView.as_view(), name="socialaccount_connections"),

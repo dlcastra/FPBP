@@ -1,10 +1,14 @@
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView, DetailView
 
+from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from .models import Thread, TutorialSection, ProgrammingLanguage
+from .helpers import data_handler
+from .models import Thread, TutorialSection, ProgrammingLanguage, ThreadAnswer
 
 
 # TEMPLATE VIEWS
@@ -86,11 +90,15 @@ class ThreadDetailView(DetailView):
     template_name = "threads/threads_detail/thread_detail.html"
 
     def get_context_data(self, request, **kwargs):
+        user = request.user
         thread_pk = self.kwargs.get("pk")
         thread_detail = get_object_or_404(Thread, pk=thread_pk)
         thread = Thread.objects.filter(id=thread_pk)
-        user = request.user
-        context = {"thread_detail": thread_detail, "thread": thread, "user": user}
+
+        get_context = data_handler(self.request, self.kwargs["pk"])
+        get_context["thread_detail"] = thread_detail
+        get_context["answer"] = ThreadAnswer.objects.filter(thread_id=self.kwargs["pk"]).all()
+        context = {"thread_detail": thread_detail, "thread": thread, "user": user, "get_context": get_context}
 
         return context
 
@@ -126,3 +134,27 @@ class ThreadDetailView(DetailView):
         context = self.get_context_data(request, **kwargs)
         context["form"] = form
         return render(request, self.template_name, context)
+
+
+def answer_handler(request, pk):
+    get_data = data_handler(request, pk)
+    user_id = get_data["user_id"]
+    thread = get_object_or_404(Thread, id=pk)
+    if thread:
+        content = request.POST.get("feedback")
+        user = CustomUser.objects.get(id=user_id)
+        ThreadAnswer.objects.create(user=user, title=thread.title, context=content, thread=thread)
+        return JsonResponse(data_handler(request, pk))
+
+    return JsonResponse({"message": "Invalid request"}, status=400)
+
+
+@require_POST
+def remove_answer(request, answer_id):
+    try:
+        answer = ThreadAnswer.objects.get(id=answer_id)
+        answer.delete()
+
+    except ThreadAnswer.DoesNotExist:
+        return JsonResponse({"error": "Answer does not exist"}, status=404)
+    return HttpResponse(status=204)

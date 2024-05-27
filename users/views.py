@@ -1,10 +1,10 @@
-from allauth.socialaccount.models import SocialAccount, SocialApp
-from django.contrib import messages
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.views import View
+
 from .forms import CustomUserChangeForm
 
 

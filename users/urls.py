@@ -1,9 +1,9 @@
 from django.urls import path, include, re_path
 from users import views
 from allauth.socialaccount import views as socialaccount_views
-from allauth.socialaccount.views import ConnectionsView as SocialConnectionsView
-from allauth.socialaccount import urls as socialaccount_urls
 from allauth.account import views as account_views
+from allauth.mfa import urls as mfa_urls
+from allauth.mfa import views as mfa_views
 
 urlpatterns = [
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
@@ -30,7 +30,8 @@ urlpatterns = [
     path("accounts/", include("allauth.socialaccount.providers.google.urls"), name="google_login"),
     path("end-login3p/", socialaccount_views.SignupView.as_view(), name="socialaccount_signup"),
     path("confirm-email/<key>/", account_views.ConfirmEmailView.as_view(), name="account_confirm_email"),
-    # path("change-data/connections/", socialaccount_views.ConnectionsView.as_view(), name="socialaccount_connections"),
     path("change-data/disconnect/<provider>/", views.disconnect_account, name="disconnect_account"),
-    # path("change-data/connect/<provider>/", views.connect_account, name="connect_account"),
+    path("change-data/mfa/", include(mfa_urls)),
+    path("change-data/mfa/totp/", mfa_views.reauthenticate, name="mfa_reauthenticate"),
+    path("change-data/account/reauth/", account_views.reauthenticate, name="account_reauthenticate"),
 ]

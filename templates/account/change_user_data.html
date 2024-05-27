@@ -42,6 +42,7 @@
             {% endfor %}
         </div>
         <a href="{% url 'account_change_password' %}">{% trans "Click here to change or set password" %}</a><br>
+        <a href="mfa/">{% trans "Click here to connect 2FA" %}</a><br>
         <input type="submit" value="{% trans "Ok" %}">
     </form>
 

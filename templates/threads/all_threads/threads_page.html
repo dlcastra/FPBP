@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form method="get">
+    <input type="submit" value="New thread" name="create">
+    {% for thread in threads %}
+        <p>ID {{ thread.id }}</p>
+        <p><a href="{% url 'detail' thread.id %}">{{ thread.title }}</a></p>
+        <p>author {{ thread.author }}</p>
+    {% endfor %}
+</form>
+</body>
+</html>

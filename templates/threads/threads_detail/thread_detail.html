@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<form method="get">
+    <input type="submit" value="Edit" name="edit">
+    {% for context in thread %}
+        <h1>{{ context.title }} | {{ context.author }} | {{ context.created }}</h1>
+        {{ context.context }}
+        {% if context.image %}
+            {{ context.image }}
+        {% endif %}
+        {% if context.file %}
+            {{ context.file }}
+        {% endif %}
+    {% endfor %}
+</form>
+</body>
+</html>

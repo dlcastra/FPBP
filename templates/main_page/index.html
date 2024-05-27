@@ -1,0 +1,26 @@
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% if not request.user.is_authenticated %}
+    <a href="/login/">Sign In</a>
+    <a href="/signup/">Sign Up</a>
+{% else %}
+    <a href="/logout/">Sign Out</a>
+{% endif %}
+<label>ok</label>
+
+<h1>Programming Languages</h1>
+<ul>
+{% if languages %}
+    {% for language in languages %}
+        <li><a href="{% url 'tutorials' language.slug %}">{{ language.name }}</a></li>
+    {% endfor %}
+{% endif %}
+</ul>
+</body>
+</html>

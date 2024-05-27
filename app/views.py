@@ -95,9 +95,9 @@ class ThreadDetailView(DetailView):
         thread_detail = get_object_or_404(Thread, pk=thread_pk)
         thread = Thread.objects.filter(id=thread_pk)
 
-        get_context = data_handler(self.request, self.kwargs["pk"])
+        get_context = data_handler(self.request, thread_pk)
         get_context["thread_detail"] = thread_detail
-        get_context["answer"] = ThreadAnswer.objects.filter(thread_id=self.kwargs["pk"]).all()
+        # get_context["answer"] = ThreadAnswer.objects.filter(thread_id=self.kwargs["pk"]).all()
         context = {"thread_detail": thread_detail, "thread": thread, "user": user, "get_context": get_context}
 
         return context

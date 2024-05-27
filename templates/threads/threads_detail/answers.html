@@ -71,7 +71,7 @@
             <div class="feedback">
                 <h5>User: {{ content.user.username }} | Article:{{ content.thread.title }}</h5>
                 <span class="feedback-text" style="" data-feedback-id="{{ content.id }}">{{ content.context }}</span>
-                {% if request.user == content.user %}
+                {% if user.id == content.user.id %}
                     <button
                             class="btn remove-feedback-btn"
                             style="width: 100%; max-width: 75px; height: 30px; font-size: 12px; margin-top: 5px"

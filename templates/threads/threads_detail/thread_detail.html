@@ -42,7 +42,7 @@
 
     });
 </script>
-<form id="feedbackForm" action="/post-feedback/{{ thread_detail.id }}" method="GET">
+<form id="feedbackForm" action="/post-feedback/{{ thread_detail.id }}" method="POST">
     <div id="feedback-container">
         {% csrf_token %}
         {% include 'threads/threads_detail/answers.html' %}

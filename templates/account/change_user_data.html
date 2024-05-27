@@ -1,0 +1,85 @@
+{% load i18n %}
+{% load allauth socialaccount %}
+{% block content %}
+    <h1>{% trans "Account Settings" %}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <h1>{% trans "List of your connections" %}</h1>
+        {% if connections %}
+            <div id="connections-list">
+
+                {% for connection in connections %}
+                    <form action="disconnect/{{ connection.provider }}/" method="post">
+                        <div class="connection-container" data-provider="{{ connection.provider }}">
+                            <label id="provider-name">{{ connection.provider }}</label>
+                            <button type="button" class="disconnect-btn" data-provider="{{ connection.provider }}">
+                                {% trans "Disconnect" %}
+                            </button>
+                            <br>
+                        </div>
+                    </form>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p id="no-connections-message">{% trans "You currently have no third-party accounts connected to this account." %}</p>
+        {% endif %}
+        <div id="available-connections-list">
+            <h2>{% trans "Available connections" %}</h2>
+            {% get_providers as socialaccount_providers %}
+            {% for provider in socialaccount_providers %}
+                {% if provider.id not in connected_provider_ids %}
+                    <div class="connection-container">
+                        <label>{{ provider.name }}</label>
+                        <a href="{% provider_login_url provider.id process="connect" %}">
+                            {% trans "Connect" %}
+                        </a>
+                        <br>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <a href="{% url 'account_change_password' %}">{% trans "Click here to change or set password" %}</a><br>
+        <input type="submit" value="{% trans "Ok" %}">
+    </form>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $(document).on('click', '.disconnect-btn', function (e) {
+                e.preventDefault();
+                var provider = $(this).data('provider');
+                var button = $(this);
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/change-data/disconnect/' + provider + '/',
+                    data: {
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            var container = button.closest('.connection-container');
+                            container.remove();
+                            alert('{% trans "Connection removed successfully." %}');
+
+                            // Check if there are no more connections left
+                            if ($('#connections-list .connection-container').length === 0) {
+                                $('#connections-list').html('<p id="no-connections-message">{% trans "You currently have no third-party accounts connected to this account." %}</p>');
+                                $("#available-connections-list").html(' <h2>{% trans "Available connections" %}</h2>{% get_providers as socialaccount_providers %}{% for provider in socialaccount_providers %}{% if provider.id not in connected_provider_ids %} <div class="connection-container"> <label>{{ provider.name }}</label> <a href="{% provider_login_url provider.id process="connect" %}">{% trans "Connect" %} </a> <br> </div>{% endif %}{% endfor %}')
+                            }
+                        } else {
+                            alert(response.error || '{% trans "An error occurred while removing the connection." %}');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                        alert('{% trans "An error occurred while removing the connection." %}');
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock content %}

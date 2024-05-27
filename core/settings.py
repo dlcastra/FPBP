@@ -169,6 +169,7 @@ EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = f"Celery <{EMAIL_HOST_USER}>"
 
 # AllAuth config
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         # "FETCH_USERINFO": True,
@@ -208,3 +209,5 @@ SOCIALACCOUNT_AUTO_SIGNUP = False
 SOCIALACCOUNT_FORMS = {
     "signup": "users.forms.CustomSocialAccountSignUp",
 }
+
+# SOCIALACCOUNT_ADAPTER = "users.adapters.CustomSocialAccountAdapter"

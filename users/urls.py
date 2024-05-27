@@ -34,5 +34,4 @@ urlpatterns = [
     path("change-data/mfa/", include(mfa_urls)),
     path("change-data/mfa/totp/", mfa_views.reauthenticate, name="mfa_reauthenticate"),
     path("change-data/account/reauth/", account_views.reauthenticate, name="account_reauthenticate"),
-
 ]

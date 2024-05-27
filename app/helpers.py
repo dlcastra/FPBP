@@ -9,11 +9,6 @@ def data_handler(request, pk):
     user = request.user
     user_id = user.id
     feedback_html = render_to_string(
-        "threads/threads_detail/answers.html",
-        {
-            "answer": answer,
-            "csrf_token": get_token(request),
-            "user": user
-        }
+        "threads/threads_detail/answers.html", {"answer": answer, "csrf_token": get_token(request), "user": user}
     )
     return {"feedback_html": feedback_html, "user_id": user_id, "csrf_token": get_token(request)}

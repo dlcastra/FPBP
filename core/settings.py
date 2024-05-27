@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # TOOLS AND FRAMEWORKS
     "rest_framework",
     "allauth",
+    "allauth.mfa",
     "allauth.account",
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
@@ -168,9 +169,10 @@ EMAIL_PORT = 587
 DEFAULT_FROM_EMAIL = f"Celery <{EMAIL_HOST_USER}>"
 
 # AllAuth config
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        "FETCH_USERINFO": True,
+        # "FETCH_USERINFO": True,
         "SCOPE": ["profile", "email"],
         "APP": {
             "client_id": config("GOOGLE_CLIENT_ID"),
@@ -189,6 +191,23 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 SOCIALACCOUNT_LOGIN_ON_GET = True
 ACCOUNT_FORMS = {
-    "signup": "users.forms.CustomUserCreationForm",
-    "change_password": "users.forms.CustomPasswordChangeForm",
+    "signup": "users.forms.CustomAccountCreationForm",
+    "change_password": "users.forms.CustomPasswordAccountChangeForm",
+    "set_password": "users.forms.CustomPasswordAccountSetForm",
+    "reset_password_from_key": "users.forms.CustomPasswordAccountResetForm",
 }
+
+MFA_FORMS = {
+    "authenticate": "allauth.mfa.forms.AuthenticateForm",
+    "reauthenticate": "allauth.mfa.forms.AuthenticateForm",
+    "activate_totp": "allauth.mfa.forms.ActivateTOTPForm",
+    "deactivate_totp": "allauth.mfa.forms.DeactivateTOTPForm",
+}
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = False
+SOCIALACCOUNT_AUTO_SIGNUP = False
+SOCIALACCOUNT_FORMS = {
+    "signup": "users.forms.CustomSocialAccountSignUp",
+}
+
+# SOCIALACCOUNT_ADAPTER = "users.adapters.CustomSocialAccountAdapter"

@@ -11,6 +11,5 @@ urlpatterns = [
     path("post-feedback/<int:pk>", views.AnswerHandler.as_view(), name="post_feedback"),
     path("remove-feedback/<int:answer_id>/", views.RemoveAnswer.as_view(), name="remove_answer"),
     # URLS FOR PROG LANGUAGES
-    path("python/", views.PythonFirstPageView.as_view(), name="python_main"),
     path("tutorials/<str:slug>/<int:page_id>/", views.TutorialPageView.as_view(), name="tutorials"),
 ]

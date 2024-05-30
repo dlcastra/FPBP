@@ -1,21 +1,17 @@
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.shortcuts import redirect
 from django.views import View
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import DetailView
 
 from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import data_handler, post_request_threads
-from .models import Thread, TutorialSection, ProgrammingLanguage, ThreadAnswer
+from .models import ProgrammingLanguage, TutorialPage, SubSection
+from .models import Thread, ThreadAnswer
 
 
-# TEMPLATE VIEWS
-class PythonFirstPageView(TemplateView):
-    template_name = "tutorials/python/python_main.html"
-
-
-# NORMAL VIEWS
 class MainPageView(View):
     template_name = "main_page/index.html"
 
@@ -25,17 +21,23 @@ class MainPageView(View):
         return context
 
     def get(self, request, *args, **kwargs):
-        languages = ProgrammingLanguage.objects.all()
-        return render(request, self.template_name, {"languages": languages})
+        context = self.get_context_data(request)
+        return render(request, self.template_name, context)
 
 
+# THREADS VIEWS
 class TutorialPageView(View):
     template_name = "tutorials/index.html"
 
-    def get(self, request, slug, *args, **kwargs):
+    def get(self, request, slug, page_id, *args, **kwargs):
         language = get_object_or_404(ProgrammingLanguage, slug=slug)
-        sections = TutorialSection.objects.filter(language=language)
-        context = {"language": language, "sections": sections}
+        page = get_object_or_404(TutorialPage, language=language, id=page_id)
+        subsections = SubSection.objects.filter(page=page)
+        context = {
+            "language": language,
+            "page": page,
+            "subsections": subsections,
+        }
         return render(request, self.template_name, context)
 
 

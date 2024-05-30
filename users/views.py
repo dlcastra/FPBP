@@ -98,7 +98,7 @@ class CreatePublication(View):
             publication = form.save(commit=False)
             publication.user = self.request.user
             publication.save()
-            return redirect(f"/{publication.user.username}/{publication.slug}/")
+            return redirect(f"/user-page/{publication.user.username}/{publication.slug}/")
         else:
             return render(request, self.template_name, {"form": form})
 

@@ -2,7 +2,10 @@ from datetime import date
 
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from phonenumber_field.modelfields import PhoneNumberField
+from core.util import unique_slug_generator
 
 
 class UserManager(BaseUserManager):
@@ -57,3 +60,34 @@ class Followers(models.Model):
 
     def __str__(self):
         return f"{self.following}"
+
+
+class Publication(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="publications")
+    title = models.CharField(max_length=255)
+    context = models.TextField()
+    attached_file = models.FileField(upload_to="publications/", null=True, blank=True)
+    attached_url = models.URLField(null=True, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, allow_unicode=True, auto_created=True)
+    published_at = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=10,
+        choices=(
+            ("draft", "Draft"),
+            ("published", "Published"),
+        ),
+        default="draft",
+    )
+
+    class Meta:
+        ordering = ("-published_at",)
+
+    def __str__(self):
+        return self.title
+
+
+@receiver(pre_save, sender=Publication)
+def pre_save_receiver(sender, instance, *args, **kwargs):
+    if not instance.slug:
+        instance.slug = unique_slug_generator(instance)

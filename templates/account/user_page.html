@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% csrf_token %}
+
+{{ user.username }}<br>
+
+<label>User follower:{{ user.followers_count }}</label>
+<label>User followings:{{ user.followings_count }}</label><br>
+<a href="{% url "new_publication" user.username %}">New Publication</a>
+{% for publication in publications %}
+    {{ publication.title }}
+{% endfor %}
+</body>
+</html>

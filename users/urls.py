@@ -7,11 +7,11 @@ from allauth.mfa import views as mfa_views
 
 urlpatterns = [
     ############################# User Urls #############################
-    path("<username>/", views.UserPageView.as_view(), name="user_page"),
+    path("user-page/<username>/", views.UserPageView.as_view(), name="user_page"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Publication Urls ##########################
-    path("<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
-    path("<username>/<slug:slug>/", views.PublicationDetailView.as_view(), name="user_publication"),
+    path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
+    path("user-page/<username>/<slug:slug>/", views.PublicationDetailView.as_view(), name="user_publication"),
     ########################### AllAuth Urls ############################
     path("signup/", account_views.SignupView.as_view(), name="account_signup"),
     path("login/", account_views.LoginView.as_view(), name="account_login"),

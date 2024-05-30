@@ -7,7 +7,7 @@ from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import data_handler, post_request_threads
-from .models import Thread, ProgrammingLanguage, ThreadAnswer
+from .models import Thread, TutorialSection, ProgrammingLanguage, ThreadAnswer
 
 
 # TEMPLATE VIEWS
@@ -34,7 +34,8 @@ class TutorialPageView(View):
 
     def get(self, request, slug, *args, **kwargs):
         language = get_object_or_404(ProgrammingLanguage, slug=slug)
-        context = {"language": language}
+        sections = TutorialSection.objects.filter(language=language)
+        context = {"language": language, "sections": sections}
         return render(request, self.template_name, context)
 
 

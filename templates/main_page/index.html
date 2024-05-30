@@ -15,12 +15,12 @@
 <label>ok</label>
 
 <h1>Programming Languages</h1>
+
 <ul>
-{% if languages %}
-    {% for language in languages %}
-        <li><a href="{% url 'tutorials' language.slug %}">{{ language.name }}</a></li>
+    {% for lang, url in prog_lang.items %}
+        <li><a href="{{ url }}">{{ lang }}</a></li>
     {% endfor %}
-{% endif %}
 </ul>
+
 </body>
 </html>

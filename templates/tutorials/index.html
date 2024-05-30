@@ -1,9 +1,27 @@
-{% block content %}
-  <h1>Tutorials for {{ language.name }}</h1>
-  {% for section in sections %}
-    <div class="section">
-      <h2>{{ section.title }}</h2>
-      <p>{{ section.content }}</p>
-    </div>
-  {% endfor %}
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page.title }} - {{ language.name }} Tutorial</title>
+</head>
+<body>
+    <h1>{{ language.name }} Tutorial</h1>
+    <h2>{{ page.title }}</h2>
+    {% for subsection in subsections %}
+        <h3>{{ subsection.title }}</h3>
+        <p>{{ subsection.content }}</p>
+    {% endfor %}
+
+    <nav>
+        <ul>
+            {% for section in language.pages.all %}
+                <li>
+                    <a href="{% url 'tutorials' language.slug section.id %}">
+                        {{ section.title }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+</body>
+</html>

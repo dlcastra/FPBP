@@ -24,7 +24,31 @@ class ThreadAnswer(models.Model):
 class ProgrammingLanguage(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
-    template_path = models.CharField(max_length=511, default="/")
 
     def __str__(self):
         return self.name
+
+
+class TutorialPage(models.Model):
+    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE, related_name="pages")
+    title = models.CharField(max_length=200)
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.language.name} - {self.title}"
+
+
+class SubSection(models.Model):
+    page = models.ForeignKey(TutorialPage, on_delete=models.CASCADE, related_name="subsections")
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.page.title} - {self.title}"

@@ -62,11 +62,11 @@ class Followers(models.Model):
 
 
 class Publication(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="publications")
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="publications")
     title = models.CharField(max_length=255)
     context = models.TextField()
+    attached_image = models.ImageField(upload_to="images/", blank=True)
     attached_file = models.FileField(upload_to="publications/", null=True, blank=True)
-    attached_url = models.URLField(null=True, blank=True)
     published_at = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     status = models.CharField(

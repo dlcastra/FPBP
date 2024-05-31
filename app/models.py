@@ -11,7 +11,16 @@ class Thread(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to="images/", blank=True)
     file = models.FileField(upload_to="files/", blank=True)
-
+    published_at = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=10,
+        choices=(
+            ("draft", "Draft"),
+            ("published", "Published"),
+        ),
+        default="draft",
+    )
 
 class Comments(models.Model):
     id = models.AutoField(primary_key=True, editable=False, unique=True)

@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("app", "0007_rename_treadanswer_threadanswer"),
     ]
@@ -65,5 +64,8 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ["order"],
             },
+        ),
+        migrations.DeleteModel(
+            name="TutorialSection",
         ),
     ]

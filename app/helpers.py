@@ -2,11 +2,11 @@ from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
 
-from .models import ThreadAnswer
+from .models import Comments
 
 
 def data_handler(request, pk):
-    answer = ThreadAnswer.objects.filter(thread_id=pk).all()
+    answer = Comments.objects.filter(object_id=pk).all()
     user = request.user
     user_id = user.id
     feedback_html = render_to_string(

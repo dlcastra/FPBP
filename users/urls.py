@@ -11,7 +11,7 @@ urlpatterns = [
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
-    path("user-page/<username>/<slug:slug>/", views.PublicationDetailView.as_view(), name="user_publication"),
+    path("user-page/<username>/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),
     ########################### AllAuth Urls ############################
     path("signup/", account_views.SignupView.as_view(), name="account_signup"),
     path("login/", account_views.LoginView.as_view(), name="account_login"),

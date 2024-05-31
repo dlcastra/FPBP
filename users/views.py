@@ -110,3 +110,6 @@ class PublicationDetailView(View):
         slug = self.kwargs.get("slug")
         publication_data = Publication.objects.get(slug=slug)
         return render(request, self.template_name, {"publication_data": publication_data})
+
+    # def post(self, request, *args, **kwargs):
+    #

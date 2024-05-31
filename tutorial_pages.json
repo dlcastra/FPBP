@@ -4,7 +4,7 @@
     "pk": 1,
     "fields": {
       "name": "python",
-      "slug": "python"
+      "slug": "mainpy"
     }
   },
   {
@@ -12,7 +12,7 @@
     "pk": 2,
     "fields": {
       "name": "c",
-      "slug": "c"
+      "slug": "mainc"
     }
   },
   {
@@ -20,7 +20,7 @@
     "pk": 3,
     "fields": {
       "name": "java",
-      "slug": "java"
+      "slug": "mainjava"
     }
   },
   {
@@ -28,7 +28,7 @@
     "pk": 4,
     "fields": {
       "name": "javascript",
-      "slug": "javascript"
+      "slug": "mainjs"
     }
   },
   {
@@ -36,7 +36,7 @@
     "pk": 5,
     "fields": {
       "name": "cpp",
-      "slug": "cpp"
+      "slug": "maincpp"
     }
   }
 ]

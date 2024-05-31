@@ -1,0 +1,42 @@
+[
+  {
+    "model": "app.ProgrammingLanguage",
+    "pk": 1,
+    "fields": {
+      "name": "python",
+      "slug": "python"
+    }
+  },
+  {
+    "model": "app.ProgrammingLanguage",
+    "pk": 2,
+    "fields": {
+      "name": "c",
+      "slug": "c"
+    }
+  },
+  {
+    "model": "app.ProgrammingLanguage",
+    "pk": 3,
+    "fields": {
+      "name": "java",
+      "slug": "java"
+    }
+  },
+  {
+    "model": "app.ProgrammingLanguage",
+    "pk": 4,
+    "fields": {
+      "name": "javascript",
+      "slug": "javascript"
+    }
+  },
+  {
+    "model": "app.ProgrammingLanguage",
+    "pk": 5,
+    "fields": {
+      "name": "cpp",
+      "slug": "cpp"
+    }
+  }
+]

@@ -1,10 +1,8 @@
-from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import DetailView
 
-from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import data_handler, post_request_details

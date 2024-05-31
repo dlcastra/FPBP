@@ -22,6 +22,7 @@ class Thread(models.Model):
         default="draft",
     )
 
+
 class Comments(models.Model):
     id = models.AutoField(primary_key=True, editable=False, unique=True)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_answer")

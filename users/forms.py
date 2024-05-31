@@ -5,6 +5,7 @@ from django.contrib.auth.forms import UserChangeForm
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
 
+from app.constants import FILE_MAX_SIZE
 from users.models import CustomUser, Publication
 
 
@@ -141,10 +142,52 @@ class CustomPasswordAccountResetForm(ResetPasswordKeyForm):
 
 
 class PublishForm(forms.ModelForm):
-    attached_url = forms.URLField(widget=forms.TextInput(attrs={"class": "form-control"}), required=False)
-    context = forms.CharField(widget=forms.Textarea(attrs={"class": "form-control"}), required=True)
-    title = forms.CharField(widget=forms.TextInput(attrs={"class": "form-control", "value": "No title"}), required=True)
-
     class Meta:
         model = Publication
-        fields = ["title", "context", "attached_file", "attached_url"]
+        fields = ["title", "context", "author", "attached_image", "attached_file"]
+        labels = {
+            "title": "Publication headline",
+            "context": "Description",
+            "image": "Upload image(Optionally)",
+            "file": "Upload file(Optionally)",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["author"].widget = forms.HiddenInput()
+        self.fields["author"].initial = kwargs.get("initial", {}).get("author")
+
+    def clean_title(self):
+        title = self.cleaned_data.get("title", "")
+        if len(title) > 255:
+            raise forms.ValidationError("Title is too long")
+        elif len(title) == 0:
+            title = "No title"
+        return title
+
+    def clean_context(self):
+        context = self.cleaned_data["context"]
+        if len(context) == 0:
+            raise forms.ValidationError("Context cannot be empty")
+        elif len(context) < 10:
+            raise forms.ValidationError("Please add more details to the contex")
+        # elif all(chr(context.isdigit())):
+        #     raise forms.ValidationError("Context cannot consist only of numbers")
+
+        return context
+
+    def clean_attached_image(self):
+        image = self.cleaned_data["attached_image"]
+        if image:
+            if image.size > FILE_MAX_SIZE:
+                raise forms.ValidationError("The image size must be less than 2 megabytes")
+
+        return image
+
+    def clean_attached_file(self):
+        file = self.cleaned_data["attached_file"]
+        if file:
+            if file.size > FILE_MAX_SIZE:
+                raise forms.ValidationError("The file size must be less than 2 megabytes")
+
+        return file

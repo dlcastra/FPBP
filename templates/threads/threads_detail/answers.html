@@ -66,10 +66,10 @@
 {% endif %}
 
 <div class="scrollable-text" id="feedback-container" style="overflow-y: scroll; height: 300px;">
-    {% if answer %}
-        {% for content in answer %}
+    {% if comments %}
+        {% for content in comments %}
             <div class="feedback">
-                <h5>User: {{ content.user.username }} | Article:{{ content.thread.title }}</h5>
+                <h5>User: {{ content.user.username }} | Article:{{ content.content_type.title }}</h5>
                 <span class="feedback-text" style="" data-feedback-id="{{ content.id }}">{{ content.context }}</span>
                 {% if user.id == content.user.id %}
                     <button

@@ -6,16 +6,16 @@ from .models import Comments
 
 
 def data_handler(request, pk):
-    answer = Comments.objects.filter(object_id=pk).all()
+    comments = Comments.objects.filter(object_id=pk).all()
     user = request.user
     user_id = user.id
     feedback_html = render_to_string(
-        "threads/threads_detail/answers.html", {"answer": answer, "csrf_token": get_token(request), "user": user}
+        "threads/threads_detail/answers.html", {"comments": comments, "csrf_token": get_token(request), "user": user}
     )
     return {"feedback_html": feedback_html, "user_id": user_id, "csrf_token": get_token(request)}
 
 
-def post_request_threads(request, form_with_files, redirect_url):
+def post_request_details(request, form_with_files, redirect_url):
     form = form_with_files
     if form.is_valid():
         instance = form.save(commit=False)

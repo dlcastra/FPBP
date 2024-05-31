@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserChangeForm
 from phonenumber_field.formfields import PhoneNumberField
 from phonenumber_field.widgets import PhoneNumberPrefixWidget
 
-from users.models import CustomUser
+from users.models import CustomUser, Publication
 
 
 class CustomUserCreationForm(forms.ModelForm):
@@ -138,3 +138,13 @@ class CustomPasswordAccountResetForm(ResetPasswordKeyForm):
         custom_form = CustomChangePasswordForm()
         self.fields.update(custom_form.fields)
         self.fields.pop("oldpassword", None)
+
+
+class PublishForm(forms.ModelForm):
+    attached_url = forms.URLField(widget=forms.TextInput(attrs={"class": "form-control"}), required=False)
+    context = forms.CharField(widget=forms.Textarea(attrs={"class": "form-control"}), required=True)
+    title = forms.CharField(widget=forms.TextInput(attrs={"class": "form-control", "value": "No title"}), required=True)
+
+    class Meta:
+        model = Publication
+        fields = ["title", "context", "attached_file", "attached_url"]

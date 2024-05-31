@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from users.models import CustomUser
 
@@ -9,6 +11,28 @@ class Thread(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     image = models.ImageField(upload_to="images/", blank=True)
     file = models.FileField(upload_to="files/", blank=True)
+    published_at = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    status = models.CharField(
+        max_length=10,
+        choices=(
+            ("draft", "Draft"),
+            ("published", "Published"),
+        ),
+        default="draft",
+    )
+
+
+class Comments(models.Model):
+    id = models.AutoField(primary_key=True, editable=False, unique=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="user_answer")
+    title = models.CharField(max_length=255)
+    context = models.TextField()
+    image = models.ImageField(upload_to="images/answers/", blank=True)
+    file = models.FileField(upload_to="files/answers/", blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, default="")
+    object_id = models.PositiveIntegerField(default="", null=False)
+    content_object = GenericForeignKey("content_type", "object_id")
 
 
 class ProgrammingLanguage(models.Model):
@@ -19,8 +43,20 @@ class ProgrammingLanguage(models.Model):
         return self.name
 
 
-class TutorialSection(models.Model):
-    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE, related_name="sections")
+class TutorialPage(models.Model):
+    language = models.ForeignKey(ProgrammingLanguage, on_delete=models.CASCADE, related_name="pages")
+    title = models.CharField(max_length=200)
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.language.name} - {self.title}"
+
+
+class SubSection(models.Model):
+    page = models.ForeignKey(TutorialPage, on_delete=models.CASCADE, related_name="subsections")
     title = models.CharField(max_length=200)
     content = models.TextField()
     order = models.IntegerField()
@@ -29,4 +65,4 @@ class TutorialSection(models.Model):
         ordering = ["order"]
 
     def __str__(self):
-        return f"{self.language.name} - {self.title}"
+        return f"{self.page.title} - {self.title}"

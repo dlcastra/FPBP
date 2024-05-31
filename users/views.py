@@ -1,14 +1,18 @@
-from allauth.socialaccount.models import SocialAccount, SocialApp
-from django.contrib import messages
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.views import View
-from .forms import CustomUserChangeForm
+
+from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin
+from .forms import CustomUserChangeForm, PublishForm
+from .models import CustomUser, Followers, Publication
 
 
-######## User Change Form ########
+######## Users Form ########
+
+
 class CustomUserChangeView(LoginRequiredMixin, View):
     form_class = CustomUserChangeForm
     template_name = "account/change_user_data.html"
@@ -39,9 +43,7 @@ class CustomUserChangeView(LoginRequiredMixin, View):
             )
 
 
-##################################
-
-
+# Disconnect Account func
 @login_required
 def disconnect_account(request, provider):
     if request.method == "POST":
@@ -54,3 +56,75 @@ def disconnect_account(request, provider):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
     return JsonResponse({"error": "Invalid request method."}, status=400)
+
+
+class UserPageView(LoginRequiredMixin, View):
+    template_name = "account/user_page.html"
+
+    def get_context_data(self, request, **kwargs):
+        username = self.kwargs.get("username")
+        user = CustomUser.objects.get(username=username)
+        user.followers_count = Followers.objects.filter(user_id=user.id, is_follow=True).count()
+        user.followings_count = Followers.objects.filter(following_id=user.id, is_follow=True).count()
+        publications = Publication.objects.filter(user_id=user.id).all()
+        context = {
+            "user": user,
+            "publications": publications,
+        }
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        return render(request, self.template_name, context)
+
+
+######### Publications Form #########
+
+
+class CreatePublication(View):
+    class_form = PublishForm
+    template_name = "publications/create_publication.html"
+
+    def get(self, request, *args, **kwargs):
+        form = self.class_form()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.class_form(request.POST)
+        if form.is_valid():
+            publication = form.save(commit=False)
+            publication.user = self.request.user
+            publication.save()
+            return redirect(f"/user-page/{publication.user.username}/{publication.id}/")
+        else:
+            return render(request, self.template_name, {"form": form})
+
+
+class PublicationDetailView(View):
+    template_name = "publications/publication_detail/publication_detail.html"
+
+    def get(self, request, *args, **kwargs):
+        pk = self.kwargs.get("pk")
+        publication_data = Publication.objects.get(id=pk)
+        return render(request, self.template_name, {"publication_data": publication_data})
+
+    # def post(self, request, *args, **kwargs):
+    #
+
+
+########## Comments Section ##########
+
+
+class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
+    def get_model_class(self):
+        return Publication
+
+
+class RemoveCommentPublication(RemoveCommentsMixin, View):
+    def post(self, request, *args, **kwargs):
+        return self.remove_comment(request, *args, **kwargs)

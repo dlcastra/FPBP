@@ -4,6 +4,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
+
+from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 
@@ -98,7 +100,7 @@ class CreatePublication(View):
             publication = form.save(commit=False)
             publication.user = self.request.user
             publication.save()
-            return redirect(f"/user-page/{publication.user.username}/{publication.slug}/")
+            return redirect(f"/user-page/{publication.user.username}/{publication.id}/")
         else:
             return render(request, self.template_name, {"form": form})
 
@@ -107,9 +109,22 @@ class PublicationDetailView(View):
     template_name = "publications/publication_detail/publication_detail.html"
 
     def get(self, request, *args, **kwargs):
-        slug = self.kwargs.get("slug")
-        publication_data = Publication.objects.get(slug=slug)
+        pk = self.kwargs.get("pk")
+        publication_data = Publication.objects.get(id=pk)
         return render(request, self.template_name, {"publication_data": publication_data})
 
     # def post(self, request, *args, **kwargs):
     #
+
+
+########## Comments Section ##########
+
+
+class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
+    def get_model_class(self):
+        return Publication
+
+
+class RemoveCommentPublication(RemoveCommentsMixin, View):
+    def post(self, request, *args, **kwargs):
+        return self.remove_comment(request, *args, **kwargs)

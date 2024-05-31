@@ -6,7 +6,7 @@ from .models import Comments
 
 
 def data_handler(request, pk):
-    answer = Comments.objects.filter(thread_id=pk).all()
+    answer = Comments.objects.filter(object_id=pk).all()
     user = request.user
     user_id = user.id
     feedback_html = render_to_string(

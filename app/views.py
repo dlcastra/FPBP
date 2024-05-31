@@ -8,6 +8,7 @@ from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import data_handler, post_request_threads
+from .mixins import CommentsHandlerMixin, RemoveCommentsMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection
 from .models import Thread, Comments
 
@@ -87,7 +88,7 @@ class ThreadDetailView(DetailView):
         thread_pk = self.kwargs.get("pk")
         thread = Thread.objects.filter(id=thread_pk).all()
         thread_detail = get_object_or_404(Thread, pk=thread_pk)
-        answer = Comments.objects.filter(thread_id=thread_pk).all()
+        answer = Comments.objects.filter(object_id=thread_pk).all()
 
         get_context = data_handler(self.request, thread_pk)
         get_context["thread_detail"] = thread_detail
@@ -129,37 +130,12 @@ class ThreadDetailView(DetailView):
         return render(request, self.template_name, context)
 
 
-class AnswerHandler(View):
+class ThreadCommentsHandlerView(CommentsHandlerMixin, View):
 
-    def get_context_data(self, request, **kwargs):
-        pk = self.kwargs.get("pk")
-        get_data = data_handler(request, pk)
-        user_id = get_data["user_id"]
-        thread = get_object_or_404(Thread, pk=pk)
+    def get_model_class(self):
+        return Thread
 
-        context = {"user_id": user_id, "thread": thread, "pk": pk}
-        return context
 
+class RemoveCommentThread(RemoveCommentsMixin, View):
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(request, **kwargs)
-        thread = context["thread"]
-
-        if thread:
-            content = request.POST.get("feedback")
-            user = CustomUser.objects.get(id=context["user_id"])
-            Comments.objects.create(user=user, title=thread.title, context=content, thread=thread)
-            return JsonResponse(data_handler(request, context["pk"]))
-
-        return JsonResponse({"message": "Invalid request"}, status=400)
-
-
-class RemoveAnswer(View):
-    def post(self, request, *args, **kwargs):
-        answer_id = self.kwargs.get("answer_id")
-        try:
-            answer = Comments.objects.get(id=answer_id)
-            answer.delete()
-
-        except Comments.DoesNotExist:
-            return JsonResponse({"error": "Answer does not exist"}, status=404)
-        return HttpResponse(status=204)
+        return self.remove_comment(request, *args, **kwargs)

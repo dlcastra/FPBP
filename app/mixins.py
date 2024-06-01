@@ -92,12 +92,12 @@ class DetailMixin(ABC, DetailView):
 
     @property
     @abstractmethod
-    def get_template_names(self):
+    def render_main_template(self):
         pass
 
     @property
     @abstractmethod
-    def get_edit_template_names(self):
+    def render_edit_template(self):
         pass
 
     @property
@@ -131,10 +131,10 @@ class DetailMixin(ABC, DetailView):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
-        template = self.get_template_names()
+        template = self.render_main_template()
 
         if "edit" in request.GET:
-            edit_template = self.get_edit_template_names()
+            edit_template = self.render_edit_template()
             form_class = self.get_form_class()
             form = form_class(instance=self.get_object())
             return render(request, edit_template, {"form": form, **context})
@@ -151,4 +151,4 @@ class DetailMixin(ABC, DetailView):
 
         context = self.get_context_data(request, **kwargs)
         context["form"] = form
-        return render(request, self.get_template_names(), context)
+        return render(request, self.render_main_template(), context)

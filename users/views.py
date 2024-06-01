@@ -5,8 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
 
-from app.helpers import post_request_details
-from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin
+from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 
@@ -107,16 +106,22 @@ class CreatePublication(View):
             return render(request, self.template_name, {"form": form})
 
 
-class PublicationDetailView(View):
-    template_name = "publications/publication_detail/publication_detail.html"
+class PublicationDetailView(DetailMixin, View):
 
-    def get(self, request, *args, **kwargs):
-        pk = self.kwargs.get("pk")
-        publication_data = Publication.objects.get(id=pk)
-        return render(request, self.template_name, {"publication_data": publication_data})
+    def get_model_class(self):
+        return Publication
 
-    # def post(self, request, *args, **kwargs):
-    #
+    def get_form_class(self):
+        return PublishForm
+
+    def render_main_template(self):
+        return "publications/publication_detail/publication_detail.html"
+
+    def render_edit_template(self):
+        return "publications/publication_detail/edit_publication.html"
+
+    def get_redirect_url(self):
+        return f"/user-page/{self.kwargs['username']}"
 
 
 ########## Comments Section ##########

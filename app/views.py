@@ -5,10 +5,10 @@ from django.views.generic import DetailView
 
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from .helpers import data_handler, post_request_details
+from .helpers import post_request_details
 from .mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection
-from .models import Thread, Comments
+from .models import Thread
 
 
 class MainPageView(View):
@@ -76,58 +76,6 @@ class CreateThreadView(View):
         return render(request, self.template_name, {"form": form})
 
 
-# class ThreadDetailView(DetailView):
-#     model = Thread
-#     form_class = ThreadForm
-#     template_name = "threads/threads_detail/thread_detail.html"
-#
-#     def get_context_data(self, request, **kwargs):
-#         user = request.user
-#         thread_pk = self.kwargs.get("pk")
-#         thread = Thread.objects.filter(id=thread_pk).all()
-#         thread_detail = get_object_or_404(Thread, pk=thread_pk)
-#         answer = Comments.objects.filter(object_id=thread_pk).all()
-#
-#         get_context = data_handler(self.request, thread_pk)
-#         get_context["thread_detail"] = thread_detail
-#         context = {
-#             "user": user,
-#             "thread": thread,
-#             "thread_detail": thread_detail,
-#             "answer": answer,
-#             "get_context": get_context,
-#         }
-#
-#         return context
-#
-#     def get_object(self, queryset=None):
-#         thread_pk = self.kwargs.get("pk")
-#         return get_object_or_404(Thread, pk=thread_pk)
-#
-#     def get(self, request, *args, **kwargs):
-#         context = self.get_context_data(request, **kwargs)
-#         template = self.template_name
-#
-#         if "edit" in request.GET:
-#             edit_template = "threads/threads_detail/edit_thread.html"
-#             form = self.form_class(instance=self.get_object())
-#             return render(request, edit_template, {"form": form})
-#
-#         return render(request, template, context)
-#
-#     def post(self, request, *args, **kwargs):
-#         form = self.form_class(request.POST, request.FILES, instance=self.get_object())
-#         thread_pk = kwargs["pk"]
-#         redirect_response = post_request_threads(request, form, f"/thread-detail/{thread_pk}")
-#
-#         if redirect_response:
-#             return redirect_response
-#
-#         context = self.get_context_data(request, **kwargs)
-#         context["form"] = form
-#         return render(request, self.template_name, context)
-
-
 class ThreadDetailView(DetailMixin, DetailView):
     def get_model_class(self):
         return Thread
@@ -135,10 +83,10 @@ class ThreadDetailView(DetailMixin, DetailView):
     def get_form_class(self):
         return ThreadForm
 
-    def get_template_names(self):
+    def render_main_template(self):
         return "threads/threads_detail/thread_detail.html"
 
-    def get_edit_template_names(self):
+    def render_edit_template(self):
         return "threads/threads_detail/edit_thread.html"
 
     def get_redirect_url(self):

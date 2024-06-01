@@ -1,14 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-{{ publication_data.user }}
-{{ publication_data.title }}
-{{ publication_data.context }}
-{{ publication_data.attached_file }}
-{{ publication_data.attached_url }}
-</body>
-</html>
+<form method="get">
+    <input type="submit" value="Edit" name="edit">
+    {% for context in model_class %}
+        <h1>{{ context.title }} | {{ context.author }} | {{ context.created }}</h1>
+        {{ context.context }}
+        {% if context.image %}
+            {{ context.image }}
+        {% endif %}
+        {% if context.file %}
+            {{ context.file }}
+        {% endif %}
+    {% endfor %}
+</form>

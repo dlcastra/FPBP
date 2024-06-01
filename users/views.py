@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
 
+from app.helpers import post_request_details
 from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
@@ -66,7 +67,7 @@ class UserPageView(LoginRequiredMixin, View):
         user = CustomUser.objects.get(username=username)
         user.followers_count = Followers.objects.filter(user_id=user.id, is_follow=True).count()
         user.followings_count = Followers.objects.filter(following_id=user.id, is_follow=True).count()
-        publications = Publication.objects.filter(user_id=user.id).all()
+        publications = Publication.objects.filter(author_id=user.id).all()
         context = {
             "user": user,
             "publications": publications,
@@ -91,16 +92,17 @@ class CreatePublication(View):
     template_name = "publications/create_publication.html"
 
     def get(self, request, *args, **kwargs):
-        form = self.class_form()
+        form = self.class_form(initial={"author": request.user})
         return render(request, self.template_name, {"form": form})
 
     def post(self, request, *args, **kwargs):
-        form = self.class_form(request.POST)
+        form = self.class_form(request.POST, request.FILES)
         if form.is_valid():
             publication = form.save(commit=False)
-            publication.user = self.request.user
+            publication.author = request.user
             publication.save()
-            return redirect(f"/user-page/{publication.user.username}/{publication.id}/")
+            form.save()
+            return redirect(f"/user-page/{publication.author.username}/{publication.id}/")
         else:
             return render(request, self.template_name, {"form": form})
 

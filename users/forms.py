@@ -144,21 +144,19 @@ class CustomPasswordAccountResetForm(ResetPasswordKeyForm):
 class PublishForm(forms.ModelForm):
     class Meta:
         model = Publication
-        fields = ["title", "context", "author", "attached_image", "attached_file"]
+        fields = ["author", "title", "context", "attached_image", "attached_file"]
         labels = {
             "title": "Publication headline",
             "context": "Description",
-            "image": "Upload image(Optionally)",
-            "file": "Upload file(Optionally)",
         }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(PublishForm, self).__init__(*args, **kwargs)
         self.fields["author"].widget = forms.HiddenInput()
         self.fields["author"].initial = kwargs.get("initial", {}).get("author")
 
     def clean_title(self):
-        title = self.cleaned_data.get("title", "")
+        title = self.cleaned_data["title"]
         if len(title) > 255:
             raise forms.ValidationError("Title is too long")
         elif len(title) == 0:

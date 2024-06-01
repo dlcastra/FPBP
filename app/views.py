@@ -1,4 +1,3 @@
-from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View

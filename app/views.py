@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
@@ -45,9 +46,12 @@ class ThreadsPageView(View):
 
     @staticmethod
     def get_context_data(request):
-        threads = Thread.objects.order_by("-id")
-        context = {"threads": threads}
-
+        search_query = request.GET.get("search", "")
+        if search_query:
+            threads = Thread.objects.filter(title__contains=search_query).order_by("id")
+        else:
+            threads = Thread.objects.order_by("-id")
+        context = {"threads": threads, "search_query": search_query}
         return context
 
     def get(self, request, *args, **kwargs):

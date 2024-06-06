@@ -97,11 +97,17 @@ class ThreadDetailView(DetailMixin, DetailView):
     def get_redirect_url(self):
         return f"/thread-detail/{self.kwargs['pk']}"
 
+    def get_comments_template(self):
+        return "threads/threads_detail/answers.html"
+
 
 class ThreadCommentsHandlerView(CommentsHandlerMixin, View):
 
     def get_model_class(self):
         return Thread
+
+    def get_template(self):
+        return "threads/threads_detail/answers.html"
 
 
 class RemoveCommentThread(RemoveCommentsMixin, View):

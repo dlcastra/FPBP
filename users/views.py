@@ -136,6 +136,9 @@ class PublicationDetailView(DetailMixin, View):
     def get_redirect_url(self):
         return f"/user-page/{self.kwargs['username']}"
 
+    def get_comments_template(self):
+        return "publications/publication_detail/answers.html"
+
 
 ########## Comments Section ##########
 
@@ -143,6 +146,9 @@ class PublicationDetailView(DetailMixin, View):
 class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
     def get_model_class(self):
         return Publication
+
+    def get_template(self):
+        return "publications/publication_detail/answers.html"
 
 
 class RemoveCommentPublication(RemoveCommentsMixin, View):

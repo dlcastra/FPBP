@@ -1,3 +1,27 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://malsup.github.io/jquery.form.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#feedbackForm').submit(function (event) {
+            event.preventDefault();
+            var formData = $(this).serialize();
+            formData += '&csrfmiddlewaretoken={{ csrf_token }}';
+            $.ajax({
+                type: 'POST',
+                url: $(this).attr('action'),
+                data: formData,
+                success: function (response) {
+                    $('#feedback-container').html(response.feedback_html);
+
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+
+    });
+</script>
 <form method="get">
     <input type="submit" value="Edit" name="edit">
     {% for context in model_class %}
@@ -10,4 +34,11 @@
             {{ context.file }}
         {% endif %}
     {% endfor %}
+</form>
+<form id="feedbackForm" action="/post-comments-p/{{ model_detail.id }}/{{ content_type.id }}/" method="POST">
+    <div id="feedback-container">
+        {% csrf_token %}
+        {% include 'publications/publication_detail/answers.html' %}
+    </div>
+    <br>
 </form>

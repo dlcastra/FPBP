@@ -13,7 +13,7 @@
 <label>User followings:{{ user.followings_count }}</label><br>
 <a href="{% url "new_publication" user.username %}">New Publication</a>
 {% for publication in publications %}
-    {{ publication.title }}
+    <a href="{% url "user_publication" user.username  publication.id %}">{{ publication.title }}</a>
 {% endfor %}
 </body>
 </html>

@@ -33,14 +33,22 @@ class CommentsHandlerMixin(ABC, View):
         """
         pass
 
+    @abstractmethod
+    def get_template(self):
+        """
+        Must be implemented to return the model class (Thread or Publications).
+        """
+        pass
+
     def get_context_data(self, request, **kwargs):
         pk = self.kwargs.get("pk")
-        get_data = data_handler(request, pk)
+        model_pk = self.kwargs.get("content_type_id")
+        get_data = data_handler(request, pk, self.get_template(), model_pk)
         user_id = get_data["user_id"]
         model_class = self.get_model_class()
         instance = get_object_or_404(model_class, pk=pk)
 
-        context = {"user_id": user_id, "instance": instance, "pk": pk}
+        context = {"user_id": user_id, "instance": instance, "model_class": model_class, "pk": pk, "model_pk": model_pk}
         return context
 
     def post(self, request, *args, **kwargs):
@@ -59,7 +67,7 @@ class CommentsHandlerMixin(ABC, View):
                     content_type=content_type,
                     object_id=context.get("pk"),
                 )
-                return JsonResponse(data_handler(request, context["pk"]))
+                return JsonResponse(data_handler(request, context["pk"], self.get_template(), context["model_pk"]))
             except CustomUser.DoesNotExist:
                 return JsonResponse({"message": "User not found"}, status=404)
             except Exception as e:
@@ -105,6 +113,10 @@ class DetailMixin(ABC, DetailView):
     def get_redirect_url(self):
         pass
 
+    @abstractmethod
+    def get_comments_template(self):
+        pass
+
     def get_context_data(self, request, **kwargs):
         user = request.user
         pk = self.kwargs.get("pk")
@@ -113,7 +125,7 @@ class DetailMixin(ABC, DetailView):
         model_detail = get_object_or_404(self.get_model_class(), pk=pk)
         comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
 
-        get_context = data_handler(request, pk)
+        get_context = data_handler(request, pk, self.get_comments_template(), self.get_model_class().objects.get().id)
         get_context["model_detail"] = model_detail
         context = {
             "user": user,
@@ -121,6 +133,7 @@ class DetailMixin(ABC, DetailView):
             "model_detail": model_detail,
             "comments": comments,
             "get_context": get_context,
+            "content_type": content_type
         }
 
         return context

@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
@@ -5,13 +6,17 @@ from django.template.loader import render_to_string
 from .models import Comments
 
 
-def data_handler(request, pk):
-    comments = Comments.objects.filter(object_id=pk).all()
+def data_handler(request, pk, template, model_pk):
+    comments = Comments.objects.filter(object_id=pk,
+                                       content_type__model=ContentType.objects.get_for_id(model_pk).model).all()
     user = request.user
     user_id = user.id
+    model_class = ContentType.objects.get_for_id(model_pk).model
     feedback_html = render_to_string(
-        "threads/threads_detail/answers.html", {"comments": comments, "csrf_token": get_token(request), "user": user}
+        template_name=template,
+        context={"comments": comments, "csrf_token": get_token(request), "user": user, }
     )
+
     return {"feedback_html": feedback_html, "user_id": user_id, "csrf_token": get_token(request)}
 
 

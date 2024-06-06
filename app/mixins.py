@@ -133,7 +133,7 @@ class DetailMixin(ABC, DetailView):
             "model_detail": model_detail,
             "comments": comments,
             "get_context": get_context,
-            "content_type": content_type
+            "content_type": content_type,
         }
 
         return context

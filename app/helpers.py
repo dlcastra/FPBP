@@ -7,14 +7,19 @@ from .models import Comments
 
 
 def data_handler(request, pk, template, model_pk):
-    comments = Comments.objects.filter(object_id=pk,
-                                       content_type__model=ContentType.objects.get_for_id(model_pk).model).all()
+    comments = Comments.objects.filter(
+        object_id=pk, content_type__model=ContentType.objects.get_for_id(model_pk).model
+    ).all()
     user = request.user
     user_id = user.id
     model_class = ContentType.objects.get_for_id(model_pk).model
     feedback_html = render_to_string(
         template_name=template,
-        context={"comments": comments, "csrf_token": get_token(request), "user": user, }
+        context={
+            "comments": comments,
+            "csrf_token": get_token(request),
+            "user": user,
+        },
     )
 
     return {"feedback_html": feedback_html, "user_id": user_id, "csrf_token": get_token(request)}

@@ -10,7 +10,6 @@ urlpatterns = [
     path("make-friends/", views.AllUsers.as_view(), name="make-friends"),
     path("user-page/<username>/", views.UserPageView.as_view(), name="user_page"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
-    # path("user-page/<username/follow/", )
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
     path("user-page/<username>/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),

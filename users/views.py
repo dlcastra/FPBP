@@ -77,14 +77,17 @@ class UserPageView(LoginRequiredMixin, View):
     def get_context_data(self, request, **kwargs):
         username = self.kwargs.get("username")
         user = CustomUser.objects.get(username=username)
-        user.followers_count = Followers.objects.filter(user_id=user.id, is_follow=True).count()
-        user.followings_count = Followers.objects.filter(following_id=user.id, is_follow=True).count()
-        publications = Publication.objects.filter(author_id=user.id).all()
+        user.followers_count = Followers.objects.filter(user=user, is_follow=True).count()
+        user.followings_count = Followers.objects.filter(following=user, is_follow=True).count()
+        publications = Publication.objects.filter(author=user)
+        is_following = Followers.objects.filter(user=user, following=request.user, is_follow=True).exists()
         context = {
             "user": user,
+            "followers_count": user.followers_count,
+            "followings_count": user.followings_count,
             "publications": publications,
+            "is_following": is_following,
         }
-
         return context
 
     def get(self, request, *args, **kwargs):
@@ -92,8 +95,20 @@ class UserPageView(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(request, **kwargs)
-        return render(request, self.template_name, context)
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            username = self.kwargs.get("username")
+            user = CustomUser.objects.get(username=username)
+            follows_obj, created = Followers.objects.get_or_create(user=user, following=request.user)
+            follows_obj.is_follow = not follows_obj.is_follow
+            follows_obj.save()
+
+            user.followers_count = Followers.objects.filter(user=user, is_follow=True).count()
+            is_following = follows_obj.is_follow
+
+            return JsonResponse({"followers_count": user.followers_count, "is_following": is_following})
+        else:
+            context = self.get_context_data(request, **kwargs)
+            return render(request, self.template_name, context)
 
 
 ######### Publications Form #########

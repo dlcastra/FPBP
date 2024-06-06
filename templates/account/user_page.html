@@ -2,20 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>User Page</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#follow-button').click(function () {
+                var action = $(this).data('action');
+                $.ajax({
+                    type: 'POST',
+                    data: {
+                        action: action,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    success: function (response) {
+                        if (response.is_following) {
+                            $('#follow-button').data('action', 'unfollow').text('Unfollow: ' + response.followers_count);
+                        } else {
+                            $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
-{% csrf_token %}
+{% csrf_token %} {{ user.username }}<br>
+{% if request.user != user %}
 
-{{ user.username }}<br>
-
-<label>User follower:{{ user.followers_count }}</label>
-<label>User followings:{{ user.followings_count }}</label><br>
+    <button type="button" id="follow-button" data-action="{% if is_following %}unfollow{% else %}follow{% endif %}">
+        {% if is_following %}Unfollow{% else %}Follow{% endif %}: {{ user.followers_count }}
+    </button>
+    <a>User Followers</a>
+    <br>
+{% else %}
+    <a>My Followers: {{ user.followers_count }}</a>
+{% endif %}
+{% if request.user == user %}
+    <label>My Followings: {{ user.followings_count }}</label><br>
+{% else %}
+    <label>User Followings: {{ user.followings_count }}</label><br>
+{% endif %}
 {% if user == request.user %}
     <a href="{% url "new_publication" user.username %}">New Publication</a>
 {% endif %}
 {% for publication in publications %}
-    {{ publication.id }}
     <a href="/user-page/{{ publication.author }}/{{ publication.id }}">{{ publication.title }}</a>
 {% endfor %}
 </body>

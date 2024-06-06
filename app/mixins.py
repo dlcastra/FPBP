@@ -132,8 +132,9 @@ class DetailMixin(ABC, DetailView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
         template = self.render_main_template()
+        user_checker = request.user.is_authenticated and request.user == context["model_detail"].author
 
-        if "edit" in request.GET:
+        if "edit" in request.GET and user_checker:
             edit_template = self.render_edit_template()
             form_class = self.get_form_class()
             form = form_class(instance=self.get_object())

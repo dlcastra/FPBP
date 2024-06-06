@@ -3,6 +3,7 @@ from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import DetailView
 
+from users.models import CustomUser
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import post_request_details
@@ -16,7 +17,8 @@ class MainPageView(View):
 
     @staticmethod
     def get_context_data(request):
-        context = {"prog_lang": PROGRAMMING_LANGUAGES}
+        user = get_object_or_404(CustomUser, username=request.user.username)
+        context = {"prog_lang": PROGRAMMING_LANGUAGES, "user": user}
         return context
 
     def get(self, request, *args, **kwargs):

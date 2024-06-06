@@ -1,5 +1,7 @@
 <form method="get">
-    <input type="submit" value="Edit" name="edit">
+    {% if request.user == user %}
+        <input type="submit" value="Edit" name="edit">
+    {% endif %}
     {% for context in model_class %}
         <h1>{{ context.title }} | {{ context.author }} | {{ context.created }}</h1>
         {{ context.context }}

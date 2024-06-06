@@ -7,6 +7,7 @@ from allauth.mfa import views as mfa_views
 
 urlpatterns = [
     ############################# User Urls #############################
+    path("make-friends/", views.AllUsers.as_view(), name="make-friends"),
     path("user-page/<username>/", views.UserPageView.as_view(), name="user_page"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Publication Urls ##########################

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% for user in all_users %}
+    <a href="/user-page/{{ user.username }}"> {{ user.username }}</a><br>
+{#    {{ user.username }}<br>#}
+{% endfor %}
+</body>
+</html>

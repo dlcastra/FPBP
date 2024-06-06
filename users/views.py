@@ -58,6 +58,19 @@ def disconnect_account(request, provider):
     return JsonResponse({"error": "Invalid request method."}, status=400)
 
 
+class AllUsers(View):
+    template_name = "account/all_users.html"
+
+    def get_context_data(self, request, **kwargs):
+        all_users = CustomUser.objects.all()
+        context = {"all_users": all_users}
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request)
+        return render(request, self.template_name, context)
+
+
 class UserPageView(LoginRequiredMixin, View):
     template_name = "account/user_page.html"
 

@@ -11,9 +11,12 @@
 
 <label>User follower:{{ user.followers_count }}</label>
 <label>User followings:{{ user.followings_count }}</label><br>
-<a href="{% url "new_publication" user.username %}">New Publication</a>
+{% if user == request.user %}
+    <a href="{% url "new_publication" user.username %}">New Publication</a>
+{% endif %}
 {% for publication in publications %}
-    {{ publication.title }}
+    {{ publication.id }}
+    <a href="/user-page/{{ publication.author }}/{{ publication.id }}">{{ publication.title }}</a>
 {% endfor %}
 </body>
 </html>

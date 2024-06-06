@@ -13,7 +13,9 @@
     <a href="/logout/">Sign Out</a>
 {% endif %}
 <label>ok</label>
-
+<ul>
+    <li><a href="/user-page/{{ user.username }}">Profile</a></li>
+</ul>
 <h1>Programming Languages</h1>
 
 <ul>
@@ -25,5 +27,8 @@
 <ul>
     <li><a href="/threads/">Threads page</a></li>
 </ul>
+
+<h1>New friends</h1>
+<li><a href="/make-friends/">New friends</a></li>
 </body>
 </html>

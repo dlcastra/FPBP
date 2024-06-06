@@ -1,4 +1,3 @@
-
 {% load allauth i18n %}
 {% block content %}
     {% element h1 %}
@@ -6,10 +5,10 @@
     {% endelement %}
     {% setvar link %}
         <a href="{{ login_url }}">
-        {% endsetvar %}
-        {% setvar end_link %}
-        </a>
     {% endsetvar %}
+{% setvar end_link %}
+    </a>
+{% endsetvar %}
     {% element p %}
         {% blocktranslate %}Already have an account? Then please {{ link }}sign in{{ end_link }}.{% endblocktranslate %}
     {% endelement %}
@@ -30,6 +29,7 @@
         {% endelement %}
     {% endif %}
     {% if SOCIALACCOUNT_ENABLED %}
-        {% include "socialaccount/snippets/login.html" with page_layout="entrance" %}
+        <a href="{% url "github_login" %}">GitHub</a><br>
+        <a href="{% url "google_login" %}">Google</a>
     {% endif %}
 {% endblock content %}

@@ -1,6 +1,7 @@
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
@@ -79,7 +80,9 @@ class UserPageView(LoginRequiredMixin, View):
         user = CustomUser.objects.get(username=username)
         user.followers_count = Followers.objects.filter(user=user, is_follow=True).count()
         user.followings_count = Followers.objects.filter(following=user, is_follow=True).count()
-        publications = Publication.objects.filter(author=user)
+        publications = Publication.objects.filter(
+            author_id=user.id, content_type=ContentType.objects.get_for_model(CustomUser)
+        )
         is_following = Followers.objects.filter(user=user, following=request.user, is_follow=True).exists()
         context = {
             "user": user,
@@ -119,17 +122,18 @@ class CreatePublication(View):
     template_name = "publications/create_publication.html"
 
     def get(self, request, *args, **kwargs):
-        form = self.class_form(initial={"author": request.user})
+        form = self.class_form(initial={"author_id": request.user.id})
         return render(request, self.template_name, {"form": form})
 
     def post(self, request, *args, **kwargs):
         form = self.class_form(request.POST, request.FILES)
         if form.is_valid():
             publication = form.save(commit=False)
-            publication.author = request.user
+            publication.author_id = request.user.id
+            publication.content_type = ContentType.objects.get_for_model(request.user)
             publication.save()
             form.save()
-            return redirect(f"/user-page/{publication.author.username}/{publication.id}/")
+            return redirect(f"/user-page/{publication.id}/")
         else:
             return render(request, self.template_name, {"form": form})
 

@@ -15,14 +15,15 @@ def data_handler(request, pk, template, model_pk):
     model_class = ContentType.objects.get_for_id(model_pk).model
     feedback_html = render_to_string(
         template_name=template,
-        context={
-            "comments": comments,
-            "csrf_token": get_token(request),
-            "user": user,
-        },
+        context={"comments": comments, "csrf_token": get_token(request), "user": user, "model_class": model_class},
     )
 
-    return {"feedback_html": feedback_html, "user_id": user_id, "csrf_token": get_token(request)}
+    return {
+        "feedback_html": feedback_html,
+        "user_id": user_id,
+        "csrf_token": get_token(request),
+        "model_class": model_class,
+    }
 
 
 def post_request_details(request, form_with_files, redirect_url):
@@ -33,7 +34,7 @@ def post_request_details(request, form_with_files, redirect_url):
             instance.image = request.FILES["image"]
         elif "file" in request.FILES:
             instance.file = request.FILES["file"]
-        instance.author = request.user
+        instance.object_id = request.user
         instance.save()
         form.save()
 

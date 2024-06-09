@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{{ publication_form.clean_data.error }}
+<h1>{{ community_data.name }}</h1><br>
+{% for admin in community_data.admins.all %}
+    {% if request.user.id == admin.id and admin.is_owner == True %}
+        {% include "publications/create_publication.html" with form=publication_form %}<br>
+    {% endif %}
+{% endfor %}
+{% if  community_data.posts.exists %}
+    {% for post in community_data.posts.all %}
+        <a href="/publication/{{ post.id }}/">{{ post.title }}</a>
+    {% endfor %}
+{% endif %}
+</body>
+</html>

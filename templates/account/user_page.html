@@ -50,7 +50,7 @@
     <a href="{% url "new_publication" user.username %}">New Publication</a>
 {% endif %}
 {% for publication in publications %}
-    <a href="/user-page/{{ publication.author }}/{{ publication.id }}">{{ publication.title }}</a>
+    <a href="/publication/{{ publication.id }}">{{ publication.title }}</a>
 {% endfor %}
 </body>
 </html>

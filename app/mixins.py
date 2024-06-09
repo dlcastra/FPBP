@@ -124,8 +124,8 @@ class DetailMixin(ABC, DetailView):
         content_type = ContentType.objects.get_for_model(self.get_model_class())
         model_detail = get_object_or_404(self.get_model_class(), pk=pk)
         comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
-
-        get_context = data_handler(request, pk, self.get_comments_template(), self.get_model_class().objects.get().id)
+        model_pk = self.get_model_class().objects.filter(pk=pk).all()[0].id
+        get_context = data_handler(request, pk, self.get_comments_template(), model_pk)
         get_context["model_detail"] = model_detail
         context = {
             "user": user,
@@ -145,7 +145,7 @@ class DetailMixin(ABC, DetailView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
         template = self.render_main_template()
-        user_checker = request.user.is_authenticated and request.user == context["model_detail"].author
+        user_checker = request.user.is_authenticated and request.user.id == context["model_detail"].author_id
 
         if "edit" in request.GET and user_checker:
             edit_template = self.render_edit_template()

@@ -144,7 +144,7 @@ class CustomPasswordAccountResetForm(ResetPasswordKeyForm):
 class PublishForm(forms.ModelForm):
     class Meta:
         model = Publication
-        fields = ["author", "title", "context", "attached_image", "attached_file"]
+        fields = ["author_id", "title", "context", "attached_image", "attached_file"]
         labels = {
             "title": "Publication headline",
             "context": "Description",
@@ -152,8 +152,8 @@ class PublishForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(PublishForm, self).__init__(*args, **kwargs)
-        self.fields["author"].widget = forms.HiddenInput()
-        self.fields["author"].initial = kwargs.get("initial", {}).get("author")
+        self.fields["author_id"].widget = forms.HiddenInput()
+        self.fields["author_id"].initial = kwargs.get("initial", {}).get("author_id")
 
     def clean_title(self):
         title = self.cleaned_data["title"]

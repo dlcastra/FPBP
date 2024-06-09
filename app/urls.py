@@ -16,4 +16,7 @@ urlpatterns = [
     path("remove-comments-t/<int:answer_id>/", views.RemoveCommentThread.as_view(), name="remove_answer"),
     # URLS FOR PROG LANGUAGES
     path("tutorials/<str:slug>/<int:page_id>/", views.TutorialPageView.as_view(), name="tutorials"),
+    # Community Urls
+    path("create-community/", views.CreateCommunityView.as_view(), name="create_community"),
+    path("community/<name>/", views.CommunityView.as_view(), name="community"),
 ]

@@ -1,6 +1,8 @@
 from datetime import date
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -60,7 +62,9 @@ class Followers(models.Model):
 
 
 class Publication(models.Model):
-    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="publications")
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, default="")
+    author_id = models.PositiveIntegerField(default="", null=False, name="author_id")
+    content_object = GenericForeignKey("content_type", "author_id")
     title = models.CharField(max_length=255)
     context = models.TextField()
     attached_image = models.ImageField(upload_to="images/", blank=True)
@@ -81,3 +85,13 @@ class Publication(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Moderators(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="moderators")
+    is_admin = models.BooleanField(default=False)
+    is_moderator = models.BooleanField(default=False)
+    is_owner = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user}"

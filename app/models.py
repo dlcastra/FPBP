@@ -66,3 +66,18 @@ class SubSection(models.Model):
 
     def __str__(self):
         return f"{self.page.title} - {self.title}"
+
+
+class Community(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(max_length=500)
+    followers = models.ManyToManyField(
+        CustomUser,
+        related_name="community_followers",
+    )
+    admins = models.ManyToManyField("users.Moderators", related_name="admins")
+    posts = models.ManyToManyField("users.Publication", related_name="posts")
+    is_private = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name

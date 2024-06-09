@@ -12,7 +12,7 @@ urlpatterns = [
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
-    path("user-page/<username>/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),
+    path("publication/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),
     ########################## Comments Urls ############################
     path("remove-comments-p/<int:answer_id>/", views.RemoveCommentPublication.as_view(), name="remove_comment_p"),
     path(

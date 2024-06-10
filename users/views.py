@@ -146,6 +146,13 @@ class PublicationDetailView(DetailMixin, View):
     def get_form_class(self):
         return PublishForm
 
+    def get_context_data(self, request, **kwargs):
+        context = super().get_context_data(request)
+        get_user = CustomUser.objects.get(id=request.user.id)
+        context["author"] = get_user.username
+
+        return context
+
     def render_main_template(self):
         return "publications/publication_detail/publication_detail.html"
 

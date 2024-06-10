@@ -20,8 +20,8 @@ class MainPageView(View):
 
     @staticmethod
     def get_context_data(request):
-        user = get_object_or_404(CustomUser, username=request.user.username)
-        context = {"prog_lang": PROGRAMMING_LANGUAGES, "user": user}
+        # user = get_object_or_404(CustomUser, username=request.user.username)
+        context = {"prog_lang": PROGRAMMING_LANGUAGES}
         return context
 
     def get(self, request, *args, **kwargs):

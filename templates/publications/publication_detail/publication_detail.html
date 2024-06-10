@@ -27,7 +27,7 @@
         <input type="submit" value="Edit" name="edit">
     {% endif %}
     {% for context in model_class %}
-        <h1>{{ context.title }} | {{ context.author }} | {{ context.created }}</h1>
+        <h1>{{ context.title }} | {{ author }} | {{ context.published_at }}</h1>
         {{ context.context }}
         {% if context.image %}
             {{ context.image }}

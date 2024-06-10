@@ -13,9 +13,12 @@
     <a href="/logout/">Sign Out</a>
 {% endif %}
 <label>ok</label>
-<ul>
-    <li><a href="/user-page/{{ request.user.username }}">Profile</a></li>
-</ul>
+
+{% if request.user.is_authenticated %}
+    <ul>
+        <li><a href="/user-page/{{ request.user.username }}">Profile</a></li>
+    </ul>
+{% endif %}
 <h1>Programming Languages</h1>
 
 <ul>

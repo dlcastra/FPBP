@@ -5,8 +5,10 @@
     <title>Title</title>
 </head>
 <body>
-{% for user in object_list %}
-    <a href="/user-page/{{ user.username }}"> {{ user.username }}</a><br>
+{% for data in object_list %}
+    <div>
+        <a href="/community/{{ data.name }}">{{ data.name }}</a>
+    </div>
 {% endfor %}
 </body>
 </html>

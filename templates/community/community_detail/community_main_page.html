@@ -4,9 +4,39 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#follow-button').click(function () {
+            var action = $(this).data('action');
+            $.ajax({
+                type: 'POST',
+                data: {
+                    action: action,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.is_following) {
+                        $('#follow-button').data('action', 'unfollow').text('Unfollow: ' + response.followers_count);
+                    } else {
+                        $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+</script>
 <body>
-{{ publication_form.clean_data.error }}
-<h1>{{ community_data.name }}</h1><br>
+
+<h1>{{ community_data.name }}</h1>
+<button type="button" id="follow-button"
+        data-action="{% if request.user in community_followers.user %} Unfollow {% else %} Follow{% endif %}">
+    {% if request.user in community_followers.user %}Unfollow{% else %}Follow{% endif %}: {{ community_followers.count }}
+</button>
+<br>
 {% for admin in community_data.admins.all %}
     {% if request.user.id == admin.id and admin.is_owner == True %}
         {% include "publications/create_publication.html" with form=publication_form %}<br>

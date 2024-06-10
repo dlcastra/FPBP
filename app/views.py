@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
@@ -11,7 +12,7 @@ from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm, CommunityForm, CreateCommunityForm
 from .helpers import post_request_details
 from .mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
-from .models import ProgrammingLanguage, TutorialPage, SubSection, Community
+from .models import ProgrammingLanguage, TutorialPage, SubSection, Community, CommunityFollowers
 from .models import Thread
 
 
@@ -125,14 +126,14 @@ class CommunityView(View):
         name = self.kwargs.get("name")
         user = CustomUser.objects.get(username=self.request.user.username)
         community_data = Community.objects.get(name=name)
-        follower_count = community_data.followers.count()
         publication_form = PublishForm(initial={"author_id": community_data.id})
+        community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         return {
             "user": user,
             "publication_form": publication_form,
             "name": name,
-            "follower_count": follower_count,
             "community_data": community_data,
+            "community_followers": community_followers,
         }
 
     def get(self, request, *args, **kwargs):
@@ -152,6 +153,17 @@ class CommunityView(View):
             community.posts.add(publication.id)
         else:
             messages.error(request, "Invalid data")
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
+            follower_obj.is_follow = not follower_obj.is_follow
+            follower_obj.save()
+
+            return JsonResponse(
+                {
+                    "followers_count": CommunityFollowers.objects.filter(community=community, is_follow=True).count(),
+                    "is_following": follower_obj.is_follow,
+                }
+            )
 
         return redirect(f"/community/{context.get('name')}/")
 
@@ -171,5 +183,6 @@ class CreateCommunityView(View):
             moderators, created = Moderators.objects.get_or_create(user=request.user, is_owner=True)
             community.admins.add(moderators)
             return redirect(f"/community/{form.cleaned_data['name']}/")
+
         else:
             return render(request, self.template_name, {"form": form})

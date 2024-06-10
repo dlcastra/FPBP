@@ -5,8 +5,9 @@
     <title>Title</title>
 </head>
 <body>
-{% for user in object_list %}
-    <a href="/user-page/{{ user.username }}"> {{ user.username }}</a><br>
+{% for i in content_from_follow%}
+    {{ i.title }} {{ i.author_id }}<br>
+    <br>
 {% endfor %}
 </body>
 </html>

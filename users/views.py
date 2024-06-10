@@ -5,13 +5,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
+from django.views.generic import ListView
 
 from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 
 
-######## Users Form ########
+# ------------------------ Users Form ------------------------
 
 
 class CustomUserChangeView(LoginRequiredMixin, View):
@@ -44,7 +45,7 @@ class CustomUserChangeView(LoginRequiredMixin, View):
             )
 
 
-# Disconnect Account func
+# ------------------------ Disconnect Account func ------------------------
 @login_required
 def disconnect_account(request, provider):
     if request.method == "POST":
@@ -59,17 +60,10 @@ def disconnect_account(request, provider):
     return JsonResponse({"error": "Invalid request method."}, status=400)
 
 
-class AllUsers(View):
+# ------------------------ USERS AND USER PROFILE VIEWS ------------------------
+class AllUsers(ListView):
+    model = CustomUser
     template_name = "account/all_users.html"
-
-    def get_context_data(self, request, **kwargs):
-        all_users = CustomUser.objects.all()
-        context = {"all_users": all_users}
-        return context
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(request)
-        return render(request, self.template_name, context)
 
 
 class UserPageView(LoginRequiredMixin, View):
@@ -114,7 +108,7 @@ class UserPageView(LoginRequiredMixin, View):
             return render(request, self.template_name, context)
 
 
-######### Publications Form #########
+# ------------------------ PUBLICATION VIEWS ------------------------
 
 
 class CreatePublication(View):
@@ -146,6 +140,13 @@ class PublicationDetailView(DetailMixin, View):
     def get_form_class(self):
         return PublishForm
 
+    def get_context_data(self, request, **kwargs):
+        context = super().get_context_data(request)
+        get_user = CustomUser.objects.get(id=request.user.id)
+        context["author"] = get_user.username
+
+        return context
+
     def render_main_template(self):
         return "publications/publication_detail/publication_detail.html"
 
@@ -159,7 +160,7 @@ class PublicationDetailView(DetailMixin, View):
         return "publications/publication_detail/answers.html"
 
 
-########## Comments Section ##########
+# ------------------------ COMMENTS SECTION ------------------------
 
 
 class PublicationCommentsHandlerView(CommentsHandlerMixin, View):

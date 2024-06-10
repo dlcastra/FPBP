@@ -4,25 +4,26 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 
 from users.forms import PublishForm
-from users.models import CustomUser, Moderators, Publication
+from users.models import CustomUser, Moderators, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
-from .forms import ThreadForm, CommunityForm, CreateCommunityForm
+from .forms import ThreadForm, CreateCommunityForm
 from .helpers import post_request_details
 from .mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection, Community, CommunityFollowers
 from .models import Thread
 
 
+# ------------------------ BASED VIEWS ------------------------
 class MainPageView(View):
     template_name = "main_page/index.html"
 
     @staticmethod
     def get_context_data(request):
-        user = get_object_or_404(CustomUser, username=request.user.username)
-        context = {"prog_lang": PROGRAMMING_LANGUAGES, "user": user}
+        # user = get_object_or_404(CustomUser, username=request.user.username)
+        context = {"prog_lang": PROGRAMMING_LANGUAGES}
         return context
 
     def get(self, request, *args, **kwargs):
@@ -30,7 +31,7 @@ class MainPageView(View):
         return render(request, self.template_name, context)
 
 
-# THREADS VIEWS
+# ------------------------ THREADS VIEWS ------------------------
 class TutorialPageView(View):
     template_name = "tutorials/index.html"
 
@@ -119,6 +120,12 @@ class RemoveCommentThread(RemoveCommentsMixin, View):
         return self.remove_comment(request, *args, **kwargs)
 
 
+# ------------------------ COMMUNITY VIEWS ------------------------
+class CommunityListView(ListView):
+    model = Community
+    template_name = "community/community_list.html"
+
+
 class CommunityView(View):
     template_name = "community/community_detail/community_main_page.html"
 
@@ -186,3 +193,41 @@ class CreateCommunityView(View):
 
         else:
             return render(request, self.template_name, {"form": form})
+
+
+# ------------------------ RECOMMENDATION FEED ------------------------
+class RecommendationFeedView(View):
+    template_name = "recommendations/index.html"
+
+    def get_context_data(self, request, **kwargs):
+        context = {}
+        # DATA FROM USER FRIENDS
+        user = CustomUser.objects.get(username=request.user.username)
+        following_user_list_id = Followers.objects.filter(following=user, is_follow=True).values_list(
+            "user_id", flat=True
+        )
+        content_from_follow = Publication.objects.filter(author_id__in=following_user_list_id).order_by("-published_at")
+
+        # DATA FROM SUBSCRIBED COMMUNITIES
+        # ...
+
+        # DATA FROM BASE COMMUNITIES
+        # ...
+
+        # DATA FROM THREADS
+        # ...
+
+        # ADVERTISING POSTS
+        # ...
+
+        # RECOMMENDED POSTS(posts from communities to which the user is not subscribed)
+        # ...
+
+        # CONTEXT SECTION
+        context["content_from_follow"] = content_from_follow
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request)
+        return render(request, self.template_name, context)

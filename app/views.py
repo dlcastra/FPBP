@@ -131,9 +131,9 @@ class CommunityView(View):
 
     def get_context_data(self, **kwargs):
         name = self.kwargs.get("name")
-        user = CustomUser.objects.get(username=self.request.user.username)
+        user = CustomUser.objects.get(id=self.request.user.id)
         community_data = Community.objects.get(name=name)
-        publication_form = PublishForm(initial={"author_id": community_data.id})
+        publication_form = PublishForm(initial={"author_id": user.id})
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         return {
             "user": user,
@@ -150,9 +150,10 @@ class CommunityView(View):
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         community = context.get("community_data")
-        publication_form = PublishForm(request.POST, initial={"object_id": request.user})
+        user = context.get("user")
+        publication_form = PublishForm(request.POST, initial={"author_id": request.user})
 
-        if publication_form.is_valid():
+        if publication_form.is_valid() and community.admins.filter(user=user.id, is_owner=True):
             publication = publication_form.save(commit=False)
             publication.author_id = request.user.id
             publication.content_type = ContentType.objects.get_for_model(Community)

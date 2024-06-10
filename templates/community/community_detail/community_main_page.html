@@ -33,12 +33,12 @@
 
 <h1>{{ community_data.name }}</h1>
 <button type="button" id="follow-button"
-        data-action="{% if request.user in community_followers.user %} Unfollow {% else %} Follow{% endif %}">
-    {% if request.user in community_followers.user %}Unfollow{% else %}Follow{% endif %}: {{ community_followers.count }}
+        data-action="{% if user in community_followers %}unfollow {% else %}follow{% endif %}">
+    {% if user in community_followers %}Unfollow{% else %}Follow{% endif %}: {{ community_followers.count }}
 </button>
 <br>
 {% for admin in community_data.admins.all %}
-    {% if request.user.id == admin.id and admin.is_owner == True %}
+    {% if user.id == admin.id and admin.is_owner == True %}
         {% include "publications/create_publication.html" with form=publication_form %}<br>
     {% endif %}
 {% endfor %}

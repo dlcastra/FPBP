@@ -127,7 +127,7 @@ class CreatePublication(View):
             publication.content_type = ContentType.objects.get_for_model(request.user)
             publication.save()
             form.save()
-            return redirect(f"/user-page/{publication.id}/")
+            return redirect(f"/publication/{publication.id}/")
         else:
             return render(request, self.template_name, {"form": form})
 

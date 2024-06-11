@@ -1,5 +1,5 @@
 from django import forms
-from .models import Thread, Community
+from .models import Thread
 from .constants import FILE_MAX_SIZE
 
 
@@ -54,17 +54,3 @@ class ThreadForm(forms.ModelForm):
                 raise forms.ValidationError("The file size must be less than 2 megabytes")
 
         return file
-
-
-class CreateCommunityForm(forms.ModelForm):
-    is_private = forms.ChoiceField(choices=[(True, "Private"), (False, "Public")], label="Status")
-
-    class Meta:
-        model = Community
-        fields = ["name", "description", "is_private"]
-
-
-class CommunityForm(forms.ModelForm):
-    class Meta:
-        model = Community
-        fields = ["name", "description", "is_private"]

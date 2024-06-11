@@ -29,23 +29,35 @@
         });
     });
 </script>
-<body>
+<body><h1>{{ community_data.name }}</h1>
 
-<h1>{{ community_data.name }}</h1>
-<button type="button" id="follow-button"
-        data-action="{% if user in community_followers %}unfollow {% else %}follow{% endif %}">
-    {{ follow_value }}: {{ community_followers.count }}
-</button>
-<br>
-{% for admin in community_data.admins.all %}
-    {% if user.id == admin.id and admin.is_owner == True %}
-        {% include "publications/create_publication.html" with form=publication_form %}<br>
-    {% endif %}
-{% endfor %}
-{% if  community_data.posts.exists %}
-    {% for post in community_data.posts.all %}
-        <a href="/publication/{{ post.id }}/">{{ post.title }}</a>
+{% if not community_data.is_private or community_data.is_private and  is_follow_user.exists %}
+    <button type="button" id="follow-button"
+            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}">
+        {{ follow_value }}: {{ community_followers.count }}
+    </button>
+    <a href="{% url "community_followers" community_data.name %}"> Followers </a>
+    <br>
+    {% for admin in community_data.admins.all %}
+        {% if user.id == admin.id and admin.is_owner == True %}
+
+            {% include "publications/create_publication.html" with form=publication_form %}<br>
+        {% endif %}
     {% endfor %}
+    {% if community_data.posts.exists %}
+        {% for post in community_data.posts.all %}
+
+            <a href="/publication/{{ post.id }}/">{{ post.title }}</a>
+        {% endfor %}
+    {% else %}
+
+
+    {% endif %}
+{% elif community_data.is_private %}
+    <button type="button" id="follow-button"
+            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}">
+        Send follow request
+    </button>
 {% endif %}
 </body>
 </html>

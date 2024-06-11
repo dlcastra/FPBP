@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('.accept_btn').click(function () {
+            var action = $(this).data('action');
+            var user = $(this).val();
+            var request_container = $(this).closest('.request_container');
+
+            $.ajax({
+                type: 'POST',
+                data: {
+                    action: action,
+                    user: user,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    request_container.remove();
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+</script>
+<body>
+{% if communityfollowers_list %}
+    {% for data in communityfollowers_list %}
+        <div class="request_container">
+            <a href="/user-page/{{ data.user.username }}/">{{ data.user.username }}</a>
+            <button type="button" class="accept_btn" data-action="Accept" value="{{ data.user.id }}">Accept</button>
+        </div>
+    {% endfor %}
+{% else %}
+    There is not any requests yet
+{% endif %}
+</body>
+</html>

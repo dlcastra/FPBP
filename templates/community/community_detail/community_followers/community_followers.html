@@ -1,0 +1,5 @@
+{% for data in communityfollowers_list %}
+    <div>
+        <a href="/user-page/{{ data.user.username }}/">{{ data.user.username }}</a>
+    </div>
+{% endfor %}

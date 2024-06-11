@@ -34,7 +34,7 @@
 <h1>{{ community_data.name }}</h1>
 <button type="button" id="follow-button"
         data-action="{% if user in community_followers %}unfollow {% else %}follow{% endif %}">
-    {% if user in community_followers %}Unfollow{% else %}Follow{% endif %}: {{ community_followers.count }}
+    {{ follow_value }}: {{ community_followers.count }}
 </button>
 <br>
 {% for admin in community_data.admins.all %}

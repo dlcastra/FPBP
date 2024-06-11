@@ -145,6 +145,13 @@ class CommunityView(View):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
+        context["follow_value"] = (
+            "Unfollow"
+            if CommunityFollowers.objects.filter(
+                user=request.user, is_follow=True, community=context["community_data"]
+            ).exists()
+            else "Follow"
+        )
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):

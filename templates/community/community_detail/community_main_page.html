@@ -21,6 +21,35 @@
                     } else {
                         $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
                     }
+                    if (response.request_status) {
+                        $('#request_btn').text("Reqeust already sent")
+                    } else {
+                        $('#request_btn').text("Send request")
+                    }
+
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+    $(document).ready(function () {
+        $('#request_btn').click(function () {
+            var action = $(this).data('action');
+            $.ajax({
+                type: 'POST',
+                data: {
+                    action: action,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.request_status) {
+                        $('#request_btn').text("Reqeust already sent")
+                    } else {
+                        $('#request_btn').text("Send request")
+                    }
+
                 },
                 error: function (xhr, status, error) {
                     console.error(error);
@@ -33,7 +62,7 @@
 
 {% if not community_data.is_private or community_data.is_private and  is_follow_user.exists %}
     <button type="button" id="follow-button"
-            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}">
+            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}" value="follow">
         {{ follow_value }}: {{ community_followers.count }}
     </button>
     <a href="{% url "community_followers" community_data.name %}"> Followers </a>
@@ -54,9 +83,10 @@
 
     {% endif %}
 {% elif community_data.is_private %}
-    <button type="button" id="follow-button"
-            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}">
-        Send follow request
+    <button type="button" id="request_btn"
+            data-action="{% if request_status.exists %}Reqeust already sent{% else %}Send request{% endif %}"
+            value="send_request">
+        {% if request_status.exists %}Reqeust already sent{% else %}Send request{% endif %}
     </button>
 {% endif %}
 </body>

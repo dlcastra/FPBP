@@ -6,7 +6,7 @@ from django.views import View
 from django.views.generic import ListView
 
 from community.forms import CreateCommunityForm
-from community.models import Community, CommunityFollowers
+from community.models import Community, CommunityFollowers, CommunityFollowRequests
 from core import settings
 from users.forms import PublishForm
 from users.models import CustomUser, Moderators
@@ -22,6 +22,7 @@ class CommunityView(View):
         publication_form = PublishForm(initial={"author_id": user.id})
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         is_follow_user = CommunityFollowers.objects.filter(community=community_data, is_follow=True, user=user).all()
+        request_status = CommunityFollowRequests.objects.filter(community=community_data, user=user).all()
         return {
             "user": user,
             "publication_form": publication_form,
@@ -29,6 +30,7 @@ class CommunityView(View):
             "community_data": community_data,
             "community_followers": community_followers,
             "is_follow_user": is_follow_user,
+            "request_status": request_status,
         }
 
     def get(self, request, *args, **kwargs):
@@ -48,36 +50,41 @@ class CommunityView(View):
             publication.content_type = ContentType.objects.get_for_model(Community)
             publication.save()
             community.posts.add(publication.id)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        if request.headers.get("x-requested-with") == "XMLHttpRequest" and self.request.POST.get("action") == "follow":
             follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
             follower_obj.is_follow = not follower_obj.is_follow
-            follower_obj.accepted = not follower_obj.accepted
-            if follower_obj.is_follow and follower_obj.accepted and not community.is_private:
+            follower_obj.save()
+            return JsonResponse(
+                {
+                    "followers_count": CommunityFollowers.objects.filter(community=community, is_follow=True).count(),
+                    "is_following": follower_obj.is_follow,
+                }
+            )
+        elif (
+            request.headers.get("x-requested-with") == "XMLHttpRequest"
+            and self.request.POST.get("action") == "send_request"
+        ):
+            request_obj, created = CommunityFollowRequests.objects.get_or_create(user=request.user, community=community)
+            request_obj.send_status = not request_obj.send_status
+            request_obj.save()
+            follow_request_link = self.request.build_absolute_uri(
+                f"/community/name-{community.name}/followers/requests/"
+            )
+            send_mail(
+                subject="Accept follower",
+                message=f"There is your new follow request: {request_obj.user.username}\n Check your follow request list:{follow_request_link}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[
+                    community.admins.get(is_owner=True).user.email,
+                ],
+            )
+            return JsonResponse(
+                {
+                    "request_status": request_obj.send_status,
+                }
+            )
 
-                follower_obj.save()
-                return JsonResponse(
-                    {
-                        "followers_count": CommunityFollowers.objects.filter(
-                            community=community, is_follow=True
-                        ).count(),
-                        "is_following": follower_obj.is_follow,
-                    }
-                )
-            elif not follower_obj.is_follow and community.is_private and not follower_obj.accepted:
-                follower_obj.save()
-                follow_request_link = self.request.build_absolute_uri(
-                    f"/community/name-{community.name}/followers/requests/"
-                )
-                send_mail(
-                    subject="Accept follower",
-                    message=f"There is your new follow request: {follower_obj.user.username}\n Check your follow request list:{follow_request_link}",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[
-                        community.admins.get(is_owner=True).user.email,
-                    ],
-                )
-
-            return redirect(f"/community/name-{context.get('name')}/")
+        return redirect(f"/community/name-{context.get('name')}/")
 
 
 class CreateCommunityView(View):
@@ -121,7 +128,7 @@ class FollowersRequestListView(View):
 
     def get_context_data(self, **kwargs):
         community = get_object_or_404(Community, name=self.kwargs["name"])
-        followers = CommunityFollowers.objects.filter(community=community, is_follow=False, accepted=False).all()
+        followers = CommunityFollowRequests.objects.filter(community=community).all()
         return {"communityfollowers_list": followers}
 
     def get(self, request, *args, **kwargs):
@@ -129,14 +136,16 @@ class FollowersRequestListView(View):
 
     def post(self, request, *args, **kwargs):
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            user_id = request.POST.get("user")
             community = get_object_or_404(Community, name=self.kwargs["name"])
-            updated = CommunityFollowers.objects.filter(user_id=user_id, community=community).update(
-                accepted=True, is_follow=True
+            user_id = request.POST.get("user")
+            accept_obj = CommunityFollowRequests.objects.get(
+                community=community, user=user_id, accepted=False, send_status=True
             )
+            if request.POST.get("accept"):
+                accept_obj.accepted = True
+                CommunityFollowers.objects.create(user=accept_obj, community=community, is_follow=True)
+            elif request.POST.get("reject"):
+                accept_obj.accepted = False
+            accept_obj.save()
 
-            if updated:
-                return JsonResponse({"success": "ok"})
-            else:
-                return JsonResponse({"error": "Something went wrong"}, status=400)
-        return JsonResponse({"error": "Invalid request"}, status=400)
+        return JsonResponse({"success": "ok"})

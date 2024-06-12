@@ -17,8 +17,18 @@ class Community(models.Model):
 class CommunityFollowers(models.Model):
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="community_relation")
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="community_followers")
-    is_follow = models.BooleanField(default=True)
-    accepted = models.BooleanField(default=True)
+    is_follow = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.community.name} - {self.user}"
+
+
+class CommunityFollowRequests(models.Model):
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="cfr")
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="ufr")
+    accepted = models.BooleanField(default=False)
+    banned = models.BooleanField(default=False)
+    send_status = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.community.name} - {self.user}"

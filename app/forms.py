@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from .models import Thread
 from .constants import FILE_MAX_SIZE
@@ -10,8 +12,14 @@ class ThreadForm(forms.ModelForm):
         labels = {
             "title": "Thread headline",
             "context": "Description",
-            "image": "Upload image(Optionally)",
-            "file": "Upload file(Optionally)",
+            "image": "Upload image(Optionally), Max size 2mb",
+            "file": "Upload file(Optionally), Max size 2mb",
+        }
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "The title should not be empty and exceed 255 characters."}),
+            "context": forms.Textarea(
+                attrs={"placeholder": "Describe your problem in detail, don't be shy. Minimum 50 characters."}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -34,8 +42,9 @@ class ThreadForm(forms.ModelForm):
             raise forms.ValidationError("Context cannot be empty")
         elif len(context) < 50:
             raise forms.ValidationError("Please add more details to the contex")
-        # elif all(chr(context.isdigit())):
-        #     raise forms.ValidationError("Context cannot consist only of numbers")
+
+        if re.fullmatch(r"\d+", context):
+            raise forms.ValidationError("Context cannot consist only of digits")
 
         return context
 

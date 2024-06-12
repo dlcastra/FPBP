@@ -34,7 +34,7 @@ def post_request_details(request, form_with_files, redirect_url):
             instance.image = request.FILES["image"]
         elif "file" in request.FILES:
             instance.file = request.FILES["file"]
-        instance.object_id = request.user
+        instance.author = request.user
         instance.save()
         form.save()
 

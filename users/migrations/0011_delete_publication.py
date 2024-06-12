@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("app", "0019_delete_community"),
         ("users", "0009_moderators"),
     ]
 

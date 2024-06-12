@@ -154,7 +154,7 @@ class PublicationDetailView(DetailMixin, View):
         return "publications/publication_detail/edit_publication.html"
 
     def get_redirect_url(self):
-        return f"/user-page/{self.kwargs['username']}"
+        return f"/publication/{self.kwargs['pk']}"
 
     def get_comments_template(self):
         return "publications/publication_detail/answers.html"

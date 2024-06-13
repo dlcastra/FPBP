@@ -5,18 +5,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}My Site{% endblock %}</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"
-            integrity="sha512-Si0zp+GqjFzP4Rmj6/TiqfI6MdYlG4RYcgV7HPmP5s8cz9OxUP9pNRU4L6E0Jf5yRLwAL2OqALdnDzfOXKr71Q=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const notificationButton = $('#notification-button');
+            const notificationList = $('#notification-list');
+            const notificationCountSpan = $('#notification-count');
+            const csrfToken = '{{ csrf_token }}';
+            const socket = new WebSocket('ws://' + window.location.host + '/ws/notify/');
+
+            socket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    const notificationElement = $('<li>')
+                        .text(data.message)
+                        .attr('data-id', data.id);
+
+                    if (!data.is_read) {
+                        const markReadButton = $('<button>')
+                            .text('Mark as Read')
+                            .addClass('mark-read-button');
+
+                        notificationElement.append(markReadButton);
+                    }
+
+                    notificationList.append(notificationElement);
+                    notificationCountSpan.text(notificationList.children().length);
+                }
+            };
+
+            socket.onclose = function (event) {
+                console.error('WebSocket closed unexpectedly');
+            };
+
+            notificationButton.on('click', function () {
+                notificationList.toggle();
+            });
+
+            notificationList.on('click', '.mark-read-button', function () {
+                const notificationElement = $(this).closest('li');
+                const notificationId = notificationElement.attr('data-id');
+
+                $.ajax({
+                    url: window.location.href,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    data: JSON.stringify({mark_read: true, id: notificationId}),
+                    success: function (data) {
+                        if (data.status === 'ok') {
+                            notificationElement.remove();
+                            notificationCountSpan.text(notificationList.children().length);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('There was a problem with the AJAX request:', error);
+                    }
+                });
+            });
+        });
+    </script>
+
 </head>
 <body>
 <nav>
     <div id="notification-section">
         <button id="notification-button">
-            Notifications (<span id="notification-count">0</span>)
+            Notifications (<span id="notification-count">{{ notifications.count }}</span>)
         </button>
         <ul id="notification-list" style="display: none;">
-
+            {% for notification in notifications %}
+                <li data-id="{{ notification.id }}">
+                    {{ notification.message }}
+                    {% if not notification.is_read %}
+                        <button class="mark-read-button" id="mark-read-button">Mark as Read</button>
+                    {% endif %}
+                </li>
+            {% endfor %}
         </ul>
     </div>
 </nav>
@@ -47,65 +114,5 @@
 
 <h1>New friends</h1>
 <li><a href="/make-friends/">New friends</a></li>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const notificationButton = document.getElementById('notification-button');
-        const notificationList = document.getElementById('notification-list');
-        const notificationCountSpan = document.getElementById('notification-count');
-        const csrfToken = '{{ csrf_token }}';
-        const socket = new WebSocket('ws://' + window.location.host + '/ws/notify/');
-
-        socket.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            if (data.message) {
-                const notificationElement = document.createElement('li');
-                notificationElement.textContent = data.message;
-                notificationElement.dataset.id = data.id;  // Assuming the backend sends an 'id' field
-                notificationList.appendChild(notificationElement);
-                notificationCountSpan.textContent = notificationList.children.length;
-            }
-        };
-
-        socket.onclose = function (event) {
-            console.error('WebSocket closed unexpectedly');
-        };
-
-        notificationButton.addEventListener('click', function () {
-            notificationList.style.display = notificationList.style.display === 'none' ? 'block' : 'none';
-        });
-
-        // Initialize Sortable
-        new Sortable(notificationList, {
-            animation: 150,
-            onEnd: function (evt) {
-                const order = [];
-                notificationList.querySelectorAll('li').forEach((item, index) => {
-                    order.push({
-                        id: item.dataset.id,
-                        position: index
-                    });
-                });
-
-                fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: JSON.stringify({order: order})
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                }).then(data => {
-                    console.log('Order updated', data);
-                }).catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                });
-            },
-        });
-    });
-</script>
 </body>
 </html>

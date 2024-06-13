@@ -1,6 +1,6 @@
 import json
 
-from django.http import JsonResponse
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
@@ -22,8 +22,8 @@ class MainPageView(View):
     @staticmethod
     def get_context_data(request):
         # user = get_object_or_404(CustomUser, username=request.user.username)
-        notification = Notification.objects.filter(user=request.user).order_by("-order")
-        context = {"prog_lang": PROGRAMMING_LANGUAGES, "notification": notification}
+        notifications = Notification.objects.filter(user=request.user).order_by("-order")
+        context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications}
         return context
 
     def get(self, request, *args, **kwargs):
@@ -31,16 +31,15 @@ class MainPageView(View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(request)
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             data = json.loads(request.body)
-            for item in data["order"]:
-                notification = Notification.objects.get(user=request.user, id=item["id"])
-                notification.order = item["order"]
-                notification.save()
-            return JsonResponse({"status": "Ok"})
-        return render(request, self.template_name, context)
+            if "mark_read" in data:
+                notification = Notification.objects.get(user=request.user, id=data["id"])
+                notification.delete()
+                return HttpResponse(json.dumps({"status": "ok"}), content_type="application/json")
+
+        return HttpResponse(json.dumps({"status": "error"}), status=400, content_type="application/json")
 
 
 # ------------------------ THREADS VIEWS ------------------------

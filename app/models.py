@@ -71,8 +71,7 @@ class SubSection(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")
     message = models.CharField(max_length=100)
-    order = models.IntegerField(auto_created=True)
-    is_read = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(auto_created=True)
 
     class Meta:
         ordering = ["order"]

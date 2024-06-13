@@ -4,7 +4,6 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.views.generic import ListView
-
 from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests
 from core import settings

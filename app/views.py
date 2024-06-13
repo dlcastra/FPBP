@@ -1,3 +1,6 @@
+import json
+
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
@@ -8,7 +11,7 @@ from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from .helpers import post_request_details
 from .mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
-from .models import ProgrammingLanguage, TutorialPage, SubSection
+from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification
 from .models import Thread
 
 
@@ -19,11 +22,24 @@ class MainPageView(View):
     @staticmethod
     def get_context_data(request):
         # user = get_object_or_404(CustomUser, username=request.user.username)
-        context = {"prog_lang": PROGRAMMING_LANGUAGES}
+        notification = Notification.objects.filter(user=request.user).order_by('-order')
+        context = {"prog_lang": PROGRAMMING_LANGUAGES, "notification": notification}
         return context
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request)
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(request)
+
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            data = json.loads(request.body)
+            for item in data["order"]:
+                notification = Notification.objects.get(user=request.user, id=item["id"])
+                notification.order = item["order"]
+                notification.save()
+            return JsonResponse({"status": "Ok"})
         return render(request, self.template_name, context)
 
 

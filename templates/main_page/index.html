@@ -1,11 +1,25 @@
-{% load socialaccount %}
+<!-- base.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Site{% endblock %}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"
+            integrity="sha512-Si0zp+GqjFzP4Rmj6/TiqfI6MdYlG4RYcgV7HPmP5s8cz9OxUP9pNRU4L6E0Jf5yRLwAL2OqALdnDzfOXKr71Q=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
+<nav>
+    <div id="notification-section">
+        <button id="notification-button">
+            Notifications (<span id="notification-count">0</span>)
+        </button>
+        <ul id="notification-list" style="display: none;">
+
+        </ul>
+    </div>
+</nav>
 {% if not request.user.is_authenticated %}
     <a href="/login/">Sign In</a>
     <a href="/signup/">Sign Up</a>
@@ -33,5 +47,65 @@
 
 <h1>New friends</h1>
 <li><a href="/make-friends/">New friends</a></li>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const notificationButton = document.getElementById('notification-button');
+        const notificationList = document.getElementById('notification-list');
+        const notificationCountSpan = document.getElementById('notification-count');
+        const csrfToken = '{{ csrf_token }}';
+        const socket = new WebSocket('ws://' + window.location.host + '/ws/notify/');
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data.message) {
+                const notificationElement = document.createElement('li');
+                notificationElement.textContent = data.message;
+                notificationElement.dataset.id = data.id;  // Assuming the backend sends an 'id' field
+                notificationList.appendChild(notificationElement);
+                notificationCountSpan.textContent = notificationList.children.length;
+            }
+        };
+
+        socket.onclose = function (event) {
+            console.error('WebSocket closed unexpectedly');
+        };
+
+        notificationButton.addEventListener('click', function () {
+            notificationList.style.display = notificationList.style.display === 'none' ? 'block' : 'none';
+        });
+
+        // Initialize Sortable
+        new Sortable(notificationList, {
+            animation: 150,
+            onEnd: function (evt) {
+                const order = [];
+                notificationList.querySelectorAll('li').forEach((item, index) => {
+                    order.push({
+                        id: item.dataset.id,
+                        position: index
+                    });
+                });
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({order: order})
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                }).then(data => {
+                    console.log('Order updated', data);
+                }).catch(error => {
+                    console.error('There was a problem with the fetch operation:', error);
+                });
+            },
+        });
+    });
+</script>
 </body>
 </html>

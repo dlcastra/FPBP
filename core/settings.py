@@ -38,14 +38,18 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "API.apps.ApiConfig",
     "phonenumber_field",
+    'webpush',
     # DJANGO BASE
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'channels',
+    "daphne",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+
     # TOOLS AND FRAMEWORKS
     "rest_framework",
     "allauth",
@@ -55,6 +59,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
     "community.apps.CommunityConfig",
+
 ]
 
 MIDDLEWARE = [
@@ -86,11 +91,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "core.wsgi.application"
-
+# WSGI_APPLICATION = "core.wsgi.application"
+ASGI_APPLICATION = 'core.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': "channels.layers.InMemoryChannelLayer"
+    }
+}
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",

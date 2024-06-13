@@ -2,6 +2,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
 
+from django.utils.safestring import mark_safe
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,4 +19,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         logger.info("WebSocket disconnected")
 
     async def send_notification(self, event):
-        await self.send(text_data=json.dumps({"message": event["message"], "id": event["id"]}))
+        message = event["message"]
+        safe_message = mark_safe(message)
+        await self.send(text_data=json.dumps({"message": safe_message, "id": event["id"]}))

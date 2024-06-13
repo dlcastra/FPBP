@@ -5,6 +5,7 @@
     <title>Title</title>
 </head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
     $(document).ready(function () {
         $('#follow-button').click(function () {
@@ -22,19 +23,17 @@
                         $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
                     }
                     if (response.request_status) {
-                        $('#request_btn').text("Reqeust already sent")
+                        $('#request_btn').text("Request already sent");
                     } else {
-                        $('#request_btn').text("Send request")
+                        $('#request_btn').text("Send request");
                     }
-
                 },
                 error: function (xhr, status, error) {
                     console.error(error);
                 }
             });
         });
-    });
-    $(document).ready(function () {
+
         $('#request_btn').click(function () {
             var action = $(this).data('action');
             $.ajax({
@@ -45,11 +44,8 @@
                 },
                 success: function (response) {
                     if (response.request_status) {
-                        $('#request_btn').text("Reqeust already sent")
-                    } else {
-                        $('#request_btn').text("Send request")
+                        $('#request_btn').text("Request already sent");
                     }
-
                 },
                 error: function (xhr, status, error) {
                     console.error(error);
@@ -58,6 +54,7 @@
         });
     });
 </script>
+
 <body><h1>{{ community_data.name }}</h1>
 
 {% if not community_data.is_private or community_data.is_private and  is_follow_user.exists %}
@@ -84,10 +81,10 @@
     {% endif %}
 {% elif community_data.is_private %}
     <button type="button" id="request_btn"
-            data-action="{% if request_status.exists %}Reqeust already sent{% else %}Send request{% endif %}"
-            value="send_request">
-        {% if request_status.exists %}Reqeust already sent{% else %}Send request{% endif %}
+            data-action="{% if request_status %}send_request{% endif %}">
+        {% if request_status %}Request already sent{% else %}Send request{% endif %}
     </button>
+
 {% endif %}
 </body>
 </html>

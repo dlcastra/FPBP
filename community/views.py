@@ -1,9 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
+
+from app.models import Notification
 from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests
 from core import settings
@@ -59,24 +62,19 @@ class CommunityView(View):
                     "is_following": follower_obj.is_follow,
                 }
             )
-        elif (
-            request.headers.get("x-requested-with") == "XMLHttpRequest"
-            and self.request.POST.get("action") == "send_request"
+        if (
+                request.headers.get("x-requested-with") == "XMLHttpRequest"
+                and self.request.POST.get("action") == "send_request"
         ):
             request_obj, created = CommunityFollowRequests.objects.get_or_create(user=request.user, community=community)
             request_obj.send_status = not request_obj.send_status
             request_obj.save()
-            follow_request_link = self.request.build_absolute_uri(
-                f"/community/name-{community.name}/followers/requests/"
+            follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
+            message = mark_safe(
+                f'There is your new follow request: {request_obj.user.username}\n'
+                f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
             )
-            send_mail(
-                subject="Accept follower",
-                message=f"There is your new follow request: {request_obj.user.username}\n Check your follow request list:{follow_request_link}",
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[
-                    community.admins.get(is_owner=True).user.email,
-                ],
-            )
+            Notification.objects.create(user=request.user, message=message)
             return JsonResponse(
                 {
                     "request_status": request_obj.send_status,

@@ -81,7 +81,7 @@
     {% endif %}
 {% elif community_data.is_private %}
     <button type="button" id="request_btn"
-            data-action="{% if request_status %}send_request{% endif %}">
+            data-action="{% if not request_status %}send_request{% endif %}">
         {% if request_status %}Request already sent{% else %}Send request{% endif %}
     </button>
 

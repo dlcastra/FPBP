@@ -27,7 +27,7 @@ class CommunityFollowRequests(models.Model):
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="cfr")
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="ufr")
     accepted = models.BooleanField(default=False)
-    send_status = models.BooleanField(default=True)
+    send_status = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.community.name} - {self.user}"

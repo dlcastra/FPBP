@@ -71,7 +71,6 @@ class SubSection(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")
     message = models.CharField(max_length=500)
-    url = models.URLField(max_length=500, null=True, blank=True)
 
     def __str__(self):
         return self.message

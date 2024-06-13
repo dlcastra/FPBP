@@ -82,6 +82,7 @@
 <body>
 <nav>
     <div id="notification-section">
+
         <button id="notification-button">
             Notifications (<span id="notification-count">{{ notifications.count }}</span>)
         </button>
@@ -93,6 +94,7 @@
                 </li>
             {% endfor %}
         </ul>
+
     </div>
 </nav>
 {% if not request.user.is_authenticated %}

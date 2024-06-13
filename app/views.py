@@ -27,7 +27,10 @@ class MainPageView(View):
         return context
 
     def get(self, request, *args, **kwargs):
+
         context = self.get_context_data(request)
+        print(context.get("notifications"))
+        print(context.get(f"{self.request.user.id}"))
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):

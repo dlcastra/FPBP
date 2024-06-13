@@ -19,16 +19,22 @@ class CommunityView(View):
 
     def get_context_data(self, **kwargs):
         name = self.kwargs.get("name")
-        user = CustomUser.objects.get(id=self.request.user.id)
         community_data = Community.objects.get(name=name)
-        publication_form = PublishForm(initial={"author_id": user.id})
+        publication_form = PublishForm(
+            initial={
+                "author_id": community_data.admins.get(
+                    is_owner=True,
+                ).user
+            }
+        )
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
-        is_follow_user = CommunityFollowers.objects.filter(community=community_data, is_follow=True, user=user).all()
+        is_follow_user = CommunityFollowers.objects.filter(
+            community=community_data, is_follow=True, user=self.request.user.id
+        ).all()
         request_status = CommunityFollowRequests.objects.filter(
-            community=community_data, user=user, accepted=False
+            community=community_data, user=self.request.user.id
         ).all()
         return {
-            "user": user,
             "publication_form": publication_form,
             "name": name,
             "community_data": community_data,
@@ -54,35 +60,37 @@ class CommunityView(View):
             publication.content_type = ContentType.objects.get_for_model(Community)
             publication.save()
             community.posts.add(publication.id)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest" and self.request.POST.get("action") == "follow":
-            follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
-            follower_obj.is_follow = not follower_obj.is_follow
-            follower_obj.save()
-            return JsonResponse(
-                {
-                    "followers_count": CommunityFollowers.objects.filter(community=community, is_follow=True).count(),
-                    "is_following": follower_obj.is_follow,
-                }
-            )
-        if (
-            request.headers.get("x-requested-with") == "XMLHttpRequest"
-            and self.request.POST.get("action") == "send_request"
-        ):
-            request_obj, created = CommunityFollowRequests.objects.get_or_create(user=request.user, community=community)
-            if request_obj.send_status:
-                follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
-                message = mark_safe(
-                    f"There is your new follow request: {request_obj.user.username}\n"
-                    f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            if self.request.POST.get("action") == "follow":
+                follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
+                follower_obj.is_follow = not follower_obj.is_follow
+                follower_obj.save()
+                return JsonResponse(
+                    {
+                        "followers_count": CommunityFollowers.objects.filter(
+                            community=community, is_follow=True
+                        ).count(),
+                        "is_following": follower_obj.is_follow,
+                    }
                 )
-                Notification.objects.create(user=request.user, message=message)
+            elif self.request.POST.get("action") == "send_request":
+                request_obj, created = CommunityFollowRequests.objects.get_or_create(
+                    user=request.user, community=community
+                )
+                if not request_obj.send_status:
+                    follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
+                    message = mark_safe(
+                        f"There is your new follow request: {request_obj.user.username}\n"
+                        f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
+                    )
+                    Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
+                request_obj.send_status = True
+                request_obj.save()
                 return JsonResponse(
                     {
                         "request_status": request_obj.send_status,
                     }
                 )
-            else:
-                return JsonResponse("request already sent")
 
         return redirect(f"/community/name-{context.get('name')}/")
 

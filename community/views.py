@@ -65,9 +65,7 @@ class CommunityView(View):
                 follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
                 follower_obj.is_follow = not follower_obj.is_follow
                 follower_obj.save()
-                followers_count = CommunityFollowers.objects.filter(
-                    community=community, is_follow=True, user=self.request.user.id
-                ).count()
+                followers_count = CommunityFollowers.objects.filter(community=community, is_follow=True).count()
                 return JsonResponse(
                     {
                         "followers_count": followers_count,

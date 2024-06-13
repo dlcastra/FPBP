@@ -73,6 +73,7 @@ class Notification(models.Model):
     message = models.CharField(max_length=100)
     order = models.IntegerField(auto_created=True)
     is_read = models.BooleanField(default=False)
+
     class Meta:
         ordering = ["order"]
 

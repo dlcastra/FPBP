@@ -22,7 +22,7 @@ class MainPageView(View):
     @staticmethod
     def get_context_data(request):
         # user = get_object_or_404(CustomUser, username=request.user.username)
-        notification = Notification.objects.filter(user=request.user).order_by('-order')
+        notification = Notification.objects.filter(user=request.user).order_by("-order")
         context = {"prog_lang": PROGRAMMING_LANGUAGES, "notification": notification}
         return context
 

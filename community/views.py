@@ -24,7 +24,7 @@ class CommunityView(View):
         publication_form = PublishForm(initial={"author_id": user.id})
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         is_follow_user = CommunityFollowers.objects.filter(community=community_data, is_follow=True, user=user).all()
-        request_status = CommunityFollowRequests.objects.filter(community=community_data, user=user).all()
+        request_status = CommunityFollowRequests.objects.filter(community=community_data, user=user, accepted=False).all()
         return {
             "user": user,
             "publication_form": publication_form,
@@ -67,19 +67,20 @@ class CommunityView(View):
                 and self.request.POST.get("action") == "send_request"
         ):
             request_obj, created = CommunityFollowRequests.objects.get_or_create(user=request.user, community=community)
-            request_obj.send_status = not request_obj.send_status
-            request_obj.save()
-            follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
-            message = mark_safe(
-                f'There is your new follow request: {request_obj.user.username}\n'
-                f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
-            )
-            Notification.objects.create(user=request.user, message=message)
-            return JsonResponse(
-                {
-                    "request_status": request_obj.send_status,
-                }
-            )
+            if request_obj.send_status:
+                follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
+                message = mark_safe(
+                    f'There is your new follow request: {request_obj.user.username}\n'
+                    f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
+                )
+                Notification.objects.create(user=request.user, message=message)
+                return JsonResponse(
+                    {
+                        "request_status": request_obj.send_status,
+                    }
+                )
+            else:
+                return JsonResponse("request already sent")
 
         return redirect(f"/community/name-{context.get('name')}/")
 

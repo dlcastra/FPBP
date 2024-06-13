@@ -24,7 +24,9 @@ class CommunityView(View):
         publication_form = PublishForm(initial={"author_id": user.id})
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         is_follow_user = CommunityFollowers.objects.filter(community=community_data, is_follow=True, user=user).all()
-        request_status = CommunityFollowRequests.objects.filter(community=community_data, user=user, accepted=False).all()
+        request_status = CommunityFollowRequests.objects.filter(
+            community=community_data, user=user, accepted=False
+        ).all()
         return {
             "user": user,
             "publication_form": publication_form,
@@ -63,14 +65,14 @@ class CommunityView(View):
                 }
             )
         if (
-                request.headers.get("x-requested-with") == "XMLHttpRequest"
-                and self.request.POST.get("action") == "send_request"
+            request.headers.get("x-requested-with") == "XMLHttpRequest"
+            and self.request.POST.get("action") == "send_request"
         ):
             request_obj, created = CommunityFollowRequests.objects.get_or_create(user=request.user, community=community)
             if request_obj.send_status:
                 follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
                 message = mark_safe(
-                    f'There is your new follow request: {request_obj.user.username}\n'
+                    f"There is your new follow request: {request_obj.user.username}\n"
                     f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
                 )
                 Notification.objects.create(user=request.user, message=message)

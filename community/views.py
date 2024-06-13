@@ -50,48 +50,49 @@ class CommunityView(View):
 
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
+        action = self.request.POST.get("action")
+
+        if action == "follow" or action == "unfollow":
+            return self.handle_follow_action(context)
+        elif action == "send_request":
+            return self.handle_send_request_action(context)
+        else:
+            return redirect(f"/community/name-{context.get('name')}/")
+
+    def handle_follow_action(self, context):
         community = context.get("community_data")
-        user = context.get("user")
-        publication_form = PublishForm(request.POST, initial={"author_id": request.user})
+        follower_obj, created = CommunityFollowers.objects.get_or_create(user=self.request.user, community=community)
+        follower_obj.is_follow = not follower_obj.is_follow
+        follower_obj.save()
+        followers_count = CommunityFollowers.objects.filter(community=community, is_follow=True).count()
+        return JsonResponse(
+            {
+                "followers_count": followers_count,
+                "is_following": follower_obj.is_follow,
+            }
+        )
 
-        if publication_form.is_valid() and community.admins.filter(user=user.id, is_owner=True):
-            publication = publication_form.save(commit=False)
-            publication.author_id = request.user.id
-            publication.content_type = ContentType.objects.get_for_model(Community)
-            publication.save()
-            community.posts.add(publication.id)
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            if self.request.POST.get("action") == "follow" or self.request.POST.get("action") == "unfollow":
-                follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
-                follower_obj.is_follow = not follower_obj.is_follow
-                follower_obj.save()
-                followers_count = CommunityFollowers.objects.filter(community=community, is_follow=True).count()
-                return JsonResponse(
-                    {
-                        "followers_count": followers_count,
-                        "is_following": follower_obj.is_follow,
-                    }
-                )
-            elif self.request.POST.get("action") == "send_request":
-                request_obj, created = CommunityFollowRequests.objects.get_or_create(
-                    user=request.user, community=community
-                )
-                if not request_obj.send_status:
-                    follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
-                    message = mark_safe(
-                        f"There is your new follow request: {request_obj.user.username}\n"
-                        f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
-                    )
-                    Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
-                request_obj.send_status = True
-                request_obj.save()
-                return JsonResponse(
-                    {
-                        "request_status": request_obj.send_status,
-                    }
-                )
+    def handle_send_request_action(self, context):
+        community = context.get("community_data")
+        request_obj, created = CommunityFollowRequests.objects.get_or_create(
+            user=self.request.user, community=community
+        )
 
-        return redirect(f"/community/name-{context.get('name')}/")
+        if not request_obj.send_status:
+            follow_request_link = reverse("community_followers_requests", kwargs={"name": community.name})
+            message = mark_safe(
+                f"There is your new follow request: {request_obj.user.username}\n"
+                f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
+            )
+            Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
+
+        request_obj.send_status = True
+        request_obj.save()
+        return JsonResponse(
+            {
+                "request_status": request_obj.send_status,
+            }
+        )
 
 
 class CreateCommunityView(View):

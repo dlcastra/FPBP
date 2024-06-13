@@ -22,11 +22,6 @@
                     } else {
                         $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
                     }
-                    if (response.request_status) {
-                        $('#request_btn').text("Request already sent");
-                    } else {
-                        $('#request_btn').text("Send request");
-                    }
                 },
                 error: function (xhr, status, error) {
                     console.error(error);

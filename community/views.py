@@ -61,15 +61,16 @@ class CommunityView(View):
             publication.save()
             community.posts.add(publication.id)
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            if self.request.POST.get("action") == "follow":
+            if self.request.POST.get("action") == "follow" or self.request.POST.get("action") == "unfollow":
                 follower_obj, created = CommunityFollowers.objects.get_or_create(user=request.user, community=community)
                 follower_obj.is_follow = not follower_obj.is_follow
                 follower_obj.save()
+                followers_count = CommunityFollowers.objects.filter(
+                    community=community, is_follow=True, user=self.request.user.id
+                ).count()
                 return JsonResponse(
                     {
-                        "followers_count": CommunityFollowers.objects.filter(
-                            community=community, is_follow=True
-                        ).count(),
+                        "followers_count": followers_count,
                         "is_following": follower_obj.is_follow,
                     }
                 )

@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "API.apps.ApiConfig",
     "phonenumber_field",
-    "webpush",
     # DJANGO BASE
     "django.contrib.admin",
     "django.contrib.auth",

@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -9,9 +8,8 @@ from django.views.generic import ListView
 from app.models import Notification
 from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests
-from core import settings
 from users.forms import PublishForm
-from users.models import CustomUser, Moderators
+from users.models import Moderators
 
 
 class CommunityView(View):

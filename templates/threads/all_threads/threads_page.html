@@ -6,6 +6,10 @@
 </head>
 <body>
 <form method="get">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control" name="search" placeholder="By title" value="{{ search_query }}">
+        <button class="btn btn-secondary" type="submit">Search</button>
+    </div>
     <input type="submit" value="New thread" name="create">
     {% for thread in threads %}
         <p>ID {{ thread.id }}</p>

@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.RenameField(
             model_name="publication",
             old_name="user",
-            new_name="author",
+            new_name="object_id",
         ),
         migrations.RemoveField(
             model_name="publication",

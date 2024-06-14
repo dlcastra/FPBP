@@ -5,13 +5,9 @@
     <title>Title</title>
 </head>
 <body>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-
-
-
-    <input type="submit" value="ok">
-</form>
+{% for i in content_from_follow%}
+    {{ i.title }} {{ i.author_id }}<br>
+    <br>
+{% endfor %}
 </body>
 </html>

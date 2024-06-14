@@ -5,13 +5,8 @@
     <title>Title</title>
 </head>
 <body>
-<form method="POST">
-    {% csrf_token %}
-    {{ form.as_p }}
-
-
-
-    <input type="submit" value="ok">
-</form>
+{% for user in object_list %}
+    <a href="/user-page/{{ user.username }}"> {{ user.username }}</a><br>
+{% endfor %}
 </body>
 </html>

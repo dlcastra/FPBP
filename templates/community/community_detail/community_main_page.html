@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#follow-button').click(function () {
+            var action = $(this).data('action');
+            $.ajax({
+                type: 'POST',
+                data: {
+                    action: action,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.is_following) {
+                        $('#follow-button').data('action', 'unfollow').text('Unfollow: ' + response.followers_count);
+                    } else {
+                        $('#follow-button').data('action', 'follow').text('Follow: ' + response.followers_count);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        $('#request_btn').click(function () {
+            var action = $(this).data('action');
+            $.ajax({
+                type: 'POST',
+                data: {
+                    action: action,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function (response) {
+                    if (response.request_status) {
+                        $('#request_btn').text("Request already sent");
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+    });
+</script>
+
+<body><h1>{{ community_data.name }}</h1>
+
+{% if not community_data.is_private or community_data.is_private and  is_follow_user.exists %}
+    <button type="button" id="follow-button"
+            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}" value="follow">
+        {{ follow_value }}: {{ community_followers.count }}
+    </button>
+    <a href="{% url "community_followers" community_data.name %}"> Followers </a>
+    <br>
+    {% for admin in community_data.admins.all %}
+        {% if user.id == admin.id and admin.is_owner == True %}
+
+            {% include "publications/create_publication.html" with form=publication_form %}<br>
+        {% endif %}
+    {% endfor %}
+    {% if community_data.posts.exists %}
+        {% for post in community_data.posts.all %}
+
+            <a href="/publication/{{ post.id }}/">{{ post.title }}</a>
+        {% endfor %}
+    {% else %}
+
+
+    {% endif %}
+{% elif community_data.is_private %}
+    <button type="button" id="request_btn"
+            data-action="{% if not request_status %}send_request{% endif %}">
+        {% if request_status %}Request already sent{% else %}Send request{% endif %}
+    </button>
+
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% for data in object_list %}
+    <div>
+        <a href="/community/name-{{ data.name }}/">{{ data.name }}</a>
+    </div>
+{% endfor %}
+</body>
+</html>

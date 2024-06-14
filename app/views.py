@@ -21,10 +21,13 @@ class MainPageView(View):
 
     @staticmethod
     def get_context_data(request):
-        # user = get_object_or_404(CustomUser, username=request.user.username)
-        notifications = Notification.objects.filter(user=request.user).order_by("id")
-        context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications}
-        return context
+        if request.user.is_authenticated:
+            notifications = Notification.objects.filter(user=request.user).order_by("id")
+            context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications}
+            return context
+        else:
+            context = {"prog_lang": PROGRAMMING_LANGUAGES}
+            return context
 
     def get(self, request, *args, **kwargs):
 

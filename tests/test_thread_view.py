@@ -13,7 +13,8 @@ class TestThreadViews(TestCase):
         self.user1 = CustomUser.objects.create_user(username="testuser1", email="test@test.com", password="testpas")
         self.user2 = CustomUser.objects.create_user(username="testuser2", email="test@test.com", password="testpas")
         self.client = Client()
-        self.url = reverse("threads")
+        self.get_url = reverse("threads")
+        self.post_url = reverse("new_thread")
         self.first_thread = Thread.objects.create(
             id=1,
             title="title_first_thread",
@@ -32,7 +33,7 @@ class TestThreadViews(TestCase):
         )
 
     def test_get_request_on_thread_page(self):
-        response = self.client.get(self.url)
+        response = self.client.get(self.get_url)
         context = response.context
         expected_threads = Thread.objects.order_by("-id")
 
@@ -53,7 +54,7 @@ class TestThreadViews(TestCase):
     def test_search_query(self):
         search_term = "title_first_thread"
 
-        response = self.client.get(self.url, {"search_query": search_term})
+        response = self.client.get(self.get_url, {"search_query": search_term})
 
         # POSITIVE RESULTS
         assert response.status_code == status.HTTP_200_OK
@@ -84,16 +85,12 @@ class TestThreadViews(TestCase):
         assert response.status_code != status.HTTP_404_NOT_FOUND
         assert response.status_code != status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_update_thread(self):
+    def test_update_thread(self): # Bad test. Needed fix.
         self.client.force_login(user=self.user1)
         url = reverse("detail", kwargs={"pk": self.first_thread.id})
         data = {
-            "id": 1,
             "title": "title_first_thread",
-            "context": "updated content",
-            "author_id": 1,
-            "published_at": "2024-06-12",
-            "status": "published",
+            "context": "updated content updated content updated content updated content",
         }
 
         response = self.client.post(url, data)
@@ -101,6 +98,7 @@ class TestThreadViews(TestCase):
         model_detail = context["model_detail"]
 
         assert response.status_code == status.HTTP_200_OK
+        self.assertTemplateUsed("threads/threads_detail/edit_thread.html")
         print(model_detail.context)
         # assert model_detail.context == data["context"]
 

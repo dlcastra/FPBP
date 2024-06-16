@@ -53,7 +53,15 @@ class CommunityView(View):
         if action == "follow" or action == "unfollow":
             return self.handle_follow_action(context)
         elif action == "send_request":
-            return self.handle_send_request_action(context)
+            request_obj = CommunityFollowRequests.objects.filter(
+                community=context["community_data"], user=self.request.user.id, send_status=True
+            )
+            if request_obj.exists():
+                request_obj.delete()
+                return JsonResponse({"success": True})
+            else:
+                return self.handle_send_request_action(context)
+
         else:
             return redirect(f"/community/name-{context.get('name')}/")
 
@@ -84,8 +92,9 @@ class CommunityView(View):
             )
             Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
 
-        request_obj.send_status = True
+            request_obj.send_status = True
         request_obj.save()
+
         return JsonResponse(
             {
                 "request_status": request_obj.send_status,
@@ -134,7 +143,7 @@ class FollowersRequestListView(View):
 
     def get_context_data(self, **kwargs):
         community = get_object_or_404(Community, name=self.kwargs["name"])
-        followers = CommunityFollowRequests.objects.filter(community=community).all()
+        followers = CommunityFollowRequests.objects.filter(community=community, accepted=False, send_status=True).all()
         return {"communityfollowers_list": followers}
 
     def get(self, request, *args, **kwargs):
@@ -147,11 +156,14 @@ class FollowersRequestListView(View):
             accept_obj = CommunityFollowRequests.objects.get(
                 community=community, user=user_id, accepted=False, send_status=True
             )
-            if request.POST.get("accept"):
-                accept_obj.accepted = True
-                CommunityFollowers.objects.create(user=accept_obj, community=community, is_follow=True)
-            elif request.POST.get("reject"):
-                accept_obj.accepted = False
-            accept_obj.save()
+            if request.POST.get("action") == "accept":
+                accept_obj.delete()
+                follow_r_obj, created = CommunityFollowers.objects.get_or_create(
+                    user=accept_obj.user, community=community
+                )
+                follow_r_obj.is_follow = True
+                follow_r_obj.save()
+            elif request.POST.get("action") == "reject":
+                accept_obj.delete()
 
         return JsonResponse({"success": "ok"})

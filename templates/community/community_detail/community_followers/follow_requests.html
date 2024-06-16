@@ -34,9 +34,9 @@
     {% for data in communityfollowers_list %}
         <div class="request_container">
             <a href="/user-page/{{ data.user.username }}/">{{ data.user.username }}</a>
-            <button type="button" class="accept_btn" data-action="Accept" value="accept">Accept</button>
-            <button type="button" class="accept_btn" data-action="Accept" value="reject">Accept</button>
-            <input type="button" value="{{ data.user.id }}" hidden="hidden">
+            <button type="button" class="accept_btn" data-action="accept" value="{{ data.user.id }}">Accept</button>
+            <button type="button" class="accept_btn" data-action="reject" value="{{ data.user.id }}">Reject</button>
+{#            <input type="button" value="{{ data.user.id }}" hidden="hidden">#}
         </div>
     {% endfor %}
 {% else %}

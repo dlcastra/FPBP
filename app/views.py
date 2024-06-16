@@ -32,19 +32,21 @@ class MainPageView(View):
     def get(self, request, *args, **kwargs):
 
         context = self.get_context_data(request)
-        print(context.get("notifications"))
-        print(context.get(f"{self.request.user.id}"))
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
 
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             data = json.loads(request.body)
+
             if "mark_read" in data:
                 notification = Notification.objects.get(user=request.user, id=data["id"])
                 notification.delete()
                 return HttpResponse(json.dumps({"status": "ok"}), content_type="application/json")
-
+            if "mark_read_all" in data:
+                notification = Notification.objects.filter(user=request.user).all()
+                notification.delete()
+                return HttpResponse(json.dumps({"status": "ok"}), content_type="application/json")
         return HttpResponse(json.dumps({"status": "error"}), status=400, content_type="application/json")
 
 

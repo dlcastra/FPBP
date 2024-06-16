@@ -64,6 +64,26 @@
                     }
                 });
             });
+            $('#mark-read-all-btn').click(function () {
+                $.ajax({
+                    url: window.location.href,
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    data: JSON.stringify({mark_read_all: true}),
+                    success: function (data) {
+                        if (data.status === 'ok') {
+                            notificationList.empty();
+                            notificationCountSpan.text(notificationList.children().length);
+                        }
+                    },
+                    error: function (error) {
+                        console.error('There was a problem with the AJAX request:', error);
+                    }
+                });
+            });
         });
     </script>
     <style>
@@ -82,18 +102,24 @@
 <body>
 <nav>
     <div id="notification-section">
-
+        <button id="mark-read-all-btn" class="mark-read-all-btn" value="mark-read-all-btn">Read All</button>
         <button id="notification-button">
             Notifications (<span id="notification-count">{{ notifications.count }}</span>)
         </button>
+
         <ul id="notification-list" style="display: none;">
+            {% if not notifications %}
+                There is not any notifications yet
+            {% endif %}
             {% for notification in notifications %}
-                <li data-id="{{ notification.id}}">
+                <li data-id="{{ notification.id }}">
                     {{ notification.message|safe }}
                     <button class="mark-read-button">Mark as Read</button>
+
                 </li>
             {% endfor %}
         </ul>
+
 
     </div>
 </nav>

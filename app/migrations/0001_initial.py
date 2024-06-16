@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 ),
                 ("title", models.CharField(max_length=255)),
                 ("context", models.TextField()),
-                ("created", models.DateTimeField(auto_now_add=True)),
+                ("published_at", models.DateTimeField(auto_now_add=True)),
                 ("image", models.ImageField(blank=True, upload_to="images/")),
                 ("file", models.FileField(blank=True, upload_to="files/")),
                 (

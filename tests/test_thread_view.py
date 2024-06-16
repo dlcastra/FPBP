@@ -85,7 +85,7 @@ class TestThreadViews(TestCase):
         assert response.status_code != status.HTTP_404_NOT_FOUND
         assert response.status_code != status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_update_thread(self): # Bad test. Needed fix.
+    def test_update_thread(self):  # Bad test. Needed fix.
         self.client.force_login(user=self.user1)
         url = reverse("detail", kwargs={"pk": self.first_thread.id})
         data = {

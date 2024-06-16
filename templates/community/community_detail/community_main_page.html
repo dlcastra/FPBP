@@ -54,20 +54,22 @@
 </script>
 
 <body><h1>{{ community_data.name }}</h1>
-
-{% if not community_data.is_private or community_data.is_private and  is_follow_user.exists %}
+   {% for admin in community_data.admins.all %}
+{% if not community_data.is_private or community_data.is_private and  is_follow_user.exists or admin%}
+    {% if not admin %}
     <button type="button" id="follow-button"
             data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}" value="follow">
         {{ follow_value }}: {{ community_followers.count }}
     </button>
+        {% endif %}
     <a href="{% url "community_followers" community_data.name %}"> Followers </a>
     <br>
-    {% for admin in community_data.admins.all %}
+
         {% if user.id == admin.id and admin.is_owner == True %}
 
             {% include "publications/create_publication.html" with form=publication_form %}<br>
         {% endif %}
-    {% endfor %}
+
     {% if community_data.posts.exists %}
         {% for post in community_data.posts.all %}
 
@@ -83,6 +85,6 @@
         {% if request_status %}Request already sent{% else %}Send Request{% endif %}
     </button>
 
-{% endif %}
+{% endif %}{% endfor %}
 </body>
 </html>

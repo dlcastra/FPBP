@@ -5,10 +5,12 @@
     <title>Title</title>
 </head>
 <body>
-{% for data in object_list %}
-    <div>
-        <a href="/community/name-{{ data.name }}/">{{ data.name }}</a>
-    </div>
-{% endfor %}
+<div id="community-list">
+    {% for data in object_list %}
+
+        <a id="community-name" href="/community/name-{{ data.name }}/">{{ data.name }}</a>
+
+    {% endfor %}
+</div>
 </body>
 </html>

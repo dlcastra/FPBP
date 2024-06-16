@@ -52,7 +52,7 @@ class CommunityView(View):
 
         if action == "follow" or action == "unfollow":
             return self.handle_follow_action(context)
-        elif action == "send_request":
+        elif action == "send_request" or action == "remove_request":
             request_obj = CommunityFollowRequests.objects.filter(
                 community=context["community_data"], user=self.request.user.id, send_status=True
             )

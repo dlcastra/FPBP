@@ -31,4 +31,9 @@ class Migration(migrations.Migration):
             name="updated",
             field=models.DateTimeField(auto_now=True),
         ),
+        migrations.AddField(
+            model_name="thread",
+            name="created",
+            field=models.DateTimeField(auto_now=True, default=django.utils.timezone.now)
+        )
     ]

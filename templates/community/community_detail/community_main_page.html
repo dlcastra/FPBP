@@ -67,7 +67,7 @@
         <br>
 
         {% if user.id == admin.id and admin.is_owner == True %}
-
+             <a href="/community/name-{{ name }}/admin-panel/">Admin panel</a>
             {% include "publications/create_publication.html" with form=publication_form %}<br>
         {% endif %}
 

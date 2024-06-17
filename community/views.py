@@ -1,15 +1,18 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
 
+from app.mixins import ViewWitsContext
 from app.models import Notification
 from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests
+from core.decorators import owner_required
 from users.forms import PublishForm
-from users.models import Moderators
+from users.models import Moderators, Publication
 
 
 class CommunityView(View):
@@ -167,3 +170,57 @@ class FollowersRequestListView(View):
                 accept_obj.delete()
 
         return JsonResponse({"success": "ok"})
+
+
+class AdminPanelView(ViewWitsContext):
+    template_name = "community/community_detail/adminpanel.html"
+    """
+    What needs to be added:
+        1. Possibility of banning users
+        2. Granting privileges (admin or moderator)
+        3. Removal of privileges
+        4. View recent activity
+        5. Possibility to delete/hide posts
+        
+        and more
+    """
+
+    def get_context_data(self, request, **kwargs):
+        context = super().get_context_data(request)
+        instance = get_object_or_404(Community, name=self.kwargs["name"])
+
+        context["owner"] = get_object_or_404(Moderators, is_owner=True)
+        context["admins"] = Moderators.objects.filter(is_admin=True).all()
+        context["moderators"] = Moderators.objects.filter(is_moderator=True).all()
+        context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).all().count()
+        # context["last_actions"] = ...
+        context["all_posts"] = Publication.objects.filter(author_id=instance.admins.get(is_owner=True).user.id)
+        # context["black_list"] = ...
+        context["instance"] = instance
+
+        return context
+
+    @method_decorator(owner_required)
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+
+        if "edit" in request.GET:
+            edit_template = "community/create_community.html"
+            form = CreateCommunityForm(instance=context["instance"])
+            return render(request, edit_template, {"form": form})
+
+        return render(request, self.template_name, context)
+
+    @method_decorator(owner_required)
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        edit_template = "community/create_community.html"
+
+        form = CreateCommunityForm(request.POST, instance=context["instance"])
+        if form.is_valid():
+            instance = form.save(commit=False)
+            instance.save()
+            form.save()
+            return render(request, self.template_name, context)
+
+        return render(request, edit_template, {"form": form})

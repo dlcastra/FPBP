@@ -166,3 +166,9 @@ class DetailMixin(ABC, DetailView):
         context = self.get_context_data(request, **kwargs)
         context["form"] = form
         return render(request, self.render_main_template(), context)
+
+
+class ViewWitsContext(View):
+    def get_context_data(self, request):
+        context = {}
+        return context

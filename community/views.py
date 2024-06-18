@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -15,19 +16,21 @@ from users.forms import PublishForm
 from users.models import Moderators, Publication
 
 
-class CommunityView(View):
+class CommunityView(ViewWitsContext):
     template_name = "community/community_detail/community_main_page.html"
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, request, **kwargs):
+        context = super().get_context_data(request, **kwargs)
         name = self.kwargs.get("name")
         community_data = Community.objects.get(name=name)
-        publication_form = PublishForm(
-            initial={
-                "author_id": community_data.admins.get(
-                    is_owner=True,
-                ).user
-            }
-        )
+
+        # PUBLICATION DATA
+        author_id = community_data.admins.get(is_owner=True).user.id
+        publication_form = PublishForm(initial={"author_id": author_id})
+        owner = get_object_or_404(Moderators, is_owner=True)
+        is_owner = Moderators.objects.filter(user=self.request.user, user__username=owner).exists()
+
+        # FOLLOWERS DATA
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
         is_follow_user = CommunityFollowers.objects.filter(
             community=community_data, is_follow=True, user=self.request.user.id
@@ -35,24 +38,28 @@ class CommunityView(View):
         request_status = CommunityFollowRequests.objects.filter(
             community=community_data, user=self.request.user.id
         ).all()
-        return {
-            "publication_form": publication_form,
-            "name": name,
-            "community_data": community_data,
-            "community_followers": community_followers,
-            "is_follow_user": is_follow_user,
-            "request_status": request_status,
-        }
+
+        # CONTEXT
+        context["publication_form"] = publication_form
+        context["name"] = name
+        context["community_data"] = community_data
+        context["community_followers"] = community_followers
+        context["is_follow_user"] = is_follow_user
+        context["request_status"] = request_status
+        context["is_owner"] = is_owner
+        context["author_id"] = author_id
+        return context
 
     def get(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+        context = self.get_context_data(request, **kwargs)
         context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        context = self.get_context_data(**kwargs)
+        context = self.get_context_data(request, **kwargs)
         action = self.request.POST.get("action")
 
+        # FOLLOW REQUESTS
         if action == "follow" or action == "unfollow":
             return self.handle_follow_action(context)
         elif action == "send_request" or action == "remove_request":
@@ -64,6 +71,19 @@ class CommunityView(View):
                 return JsonResponse({"success": True})
             else:
                 return self.handle_send_request_action(context)
+
+        # POST CREATION REQUEST
+        elif "new_post" in request.POST and context["is_owner"]:
+            form = PublishForm(request.POST, request.FILES, initial={"author_id": context["author_id"]})
+            if form.is_valid:
+                # NEED FIX
+                publication = form.save(commit=False)
+                publication.content_type = ContentType.objects.get_for_model(request.user)
+                publication.save()
+                form.save()
+
+                print("Yes")
+                return redirect(f"/community/name-{context.get('name')}/")
 
         else:
             return redirect(f"/community/name-{context.get('name')}/")

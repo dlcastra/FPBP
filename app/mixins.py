@@ -169,6 +169,6 @@ class DetailMixin(ABC, DetailView):
 
 
 class ViewWitsContext(View):
-    def get_context_data(self, request):
+    def get_context_data(self, request, **kwargs):
         context = {}
         return context

@@ -11,4 +11,9 @@ urlpatterns = [
         "name-<name>/followers/requests/", views.FollowersRequestListView.as_view(), name="community_followers_requests"
     ),
     path("name-<name>/admin-panel/", views.AdminPanelView.as_view(), name="admin_panel"),
+    path(
+        "name-<str:name>/admin-panel/put_ban/<int:follower_id>/",
+        views.AdminPanelView.as_view(),
+        name="put_ban",
+    ),
 ]

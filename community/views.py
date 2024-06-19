@@ -10,7 +10,7 @@ from django.views.generic import ListView
 from app.helpers import base_post_method
 from app.mixins import ViewWitsContext
 from app.models import Notification
-from community.forms import CreateCommunityForm
+from community.forms import CreateCommunityForm, BlackListForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests
 from core.decorators import owner_required
 from users.forms import PublishForm
@@ -194,7 +194,7 @@ class FollowersRequestListView(View):
 
 
 class AdminPanelView(ViewWitsContext):
-    template_name = "community/community_detail/adminpanel.html"
+    template_name = "community/community_detail/admin_panel/adminpanel.html"
     """
     What needs to be added:
         1. Possibility of banning users
@@ -245,6 +245,12 @@ class AdminPanelView(ViewWitsContext):
             form = CreateCommunityForm(instance=context["instance"])
             return render(request, edit_template, {"form": form})
 
+        if "followers_list" in request.GET:
+            return self.get_followers(request)
+
+        if "put_ban" in request.GET:
+            return self.ban_user
+
         return render(request, self.template_name, context)
 
     @method_decorator(owner_required)
@@ -259,3 +265,21 @@ class AdminPanelView(ViewWitsContext):
             return redirect_response
 
         return render(request, edit_template, {"form": form})
+
+    def get_followers(self, request, **kwargs):
+        followers = CommunityFollowers.objects.filter(
+            community=get_object_or_404(Community, name=self.kwargs["name"]), is_follow=True
+        ).all()
+        template = "community/community_detail/admin_panel/uses_list.html"
+        return render(request, template, {"followers": followers})
+
+    def ban_user(self, request, *args, **kwargs):  # It's not over yet
+        if request.method == "GET":
+            ban_template = "community/community_detail/admin_panel/put_ban.html"
+            community_id = Community.objects.get(name=self.kwargs["name"]).id
+            follower_id = CommunityFollowers.objects.get(
+                community=community_id, is_follow=True, id=self.kwargs["follower_id"]
+            )
+            form = BlackListForm(initial={"community": community_id, "user": follower_id})
+
+            return render(request, ban_template, {"form": form})

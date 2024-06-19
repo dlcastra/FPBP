@@ -1,6 +1,7 @@
 from django import forms
 
-from community.models import Community
+from app.helpers import form_check_len
+from community.models import Community, BlackList
 
 
 class CreateCommunityForm(forms.ModelForm):
@@ -15,3 +16,30 @@ class CommunityForm(forms.ModelForm):
     class Meta:
         model = Community
         fields = ["name", "description", "is_private"]
+
+
+class BlackListForm(forms.ModelForm):
+    class Meta:
+        model = BlackList
+        fields = ["user", "community", "reason"]
+        labels = {"reason": "Describe the reason for the ban"}
+        widgets = {
+            "reason": forms.Textarea(
+                attrs={
+                    "placeholder": "The description of the reason must be at minimum 50 or maximum 2000 characters long"
+                }
+            )
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(BlackListForm, self).__init__(*args, **kwargs)
+        self.fields["user"].widget = forms.HiddenInput()
+        self.fields["user"].initial = kwargs.get("initial", {}).get("user")
+        self.fields["community"].widget = forms.HiddenInput()
+        self.fields["community"].initial = kwargs.get("initial", {}).get("community")
+
+    def clean_reason(self):
+        reason = self.cleaned_data["reason"]
+        too_short_error = "Please add more details to the reason"
+        too_long_error = "The reason is too long"
+        form_check_len(reason, 50, 2000, too_short_error, too_long_error)

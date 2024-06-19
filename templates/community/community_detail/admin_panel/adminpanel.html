@@ -6,10 +6,14 @@
 </head>
 <body>
 <h1>Admin panel</h1>
-<p>Followers: {{ followers }}</p><br>
-<p>Owner: {{ owner }}</p><br>
-<p>Admins list: {{ admins }}</p><br>
+{#<p>Followers: {{ followers }}</p><br>#}
+<form method="get">
+    <input type="submit" name="followers_list" value="Followers">
+</form>
+<p>Owner: {{ owner }}</p>
+<p>Admins list: {{ admins }}</p>
 <p>Moderators list: {{ moderators }}</p><br>
+<p>Posts counter: {{ all_posts.count }}</p>
 {% for post in all_posts %}
     <p>Post ID:{{ post.id }} | Title: {{ post.title }}</p>
 {% endfor %}

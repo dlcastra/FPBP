@@ -31,3 +31,12 @@ class CommunityFollowRequests(models.Model):
 
     def __str__(self):
         return f"{self.community.name} - {self.user}"
+
+
+class BlackList(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="banned")
+    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="banned_in")
+    reason = models.TextField(max_length=500)
+
+    def __str__(self):
+        return f"{self.user} banned in {self.community} for {self.reason}"

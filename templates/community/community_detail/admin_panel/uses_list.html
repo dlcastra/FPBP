@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h2>Followers list</h2>
+{% for follower in followers %}
+    Username: {{ follower.user.username }} | ID: {{ follower.id }} <br>
+    <form method="get" action="/name-{{ instance }}/admin-panel/put-ban/{{ follower.id }}">
+        <input type="submit" value="BAN">
+    </form>
+{% endfor %}
+</body>
+</html>

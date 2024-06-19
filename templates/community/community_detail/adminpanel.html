@@ -10,8 +10,11 @@
 <p>Owner: {{ owner }}</p><br>
 <p>Admins list: {{ admins }}</p><br>
 <p>Moderators list: {{ moderators }}</p><br>
+{% for post in all_posts %}
+    <p>Post ID:{{ post.id }} | Title: {{ post.title }}</p>
+{% endfor %}
+
 <form method="get">
-{#    {% csrf_token %}#}
     <input type="submit" name="edit" value="edit">
     
 </form>

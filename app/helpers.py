@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
-from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from .models import Comments

@@ -210,15 +210,30 @@ class AdminPanelView(ViewWitsContext):
         context = super().get_context_data(request)
         instance = get_object_or_404(Community, name=self.kwargs["name"])
 
+        # Community managers data
         context["owner"] = get_object_or_404(Moderators, is_owner=True)
-        context["admins"] = Moderators.objects.filter(is_admin=True).all()
-        context["moderators"] = Moderators.objects.filter(is_moderator=True).all()
-        context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).all().count()
-        # context["last_actions"] = ...
-        context["all_posts"] = Publication.objects.filter(author_id=instance.admins.get(is_owner=True).user.id)
-        # context["black_list"] = ...
-        context["instance"] = instance
+        context["admins"] = Moderators.objects.filter(is_admin=True)
+        context["moderators"] = Moderators.objects.filter(is_moderator=True)
 
+        if not context["admins"]:
+            context["admins"] = "You have no admins yet"
+        if not context["moderators"]:
+            context["moderators"] = "You have no moderators yet"
+
+        # Community base data
+        context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
+
+        # Get community publications
+        owner = instance.admins.filter(is_owner=True).first()
+        if owner:
+            context["all_posts"] = list(Publication.objects.filter(author_id=owner.user.id).values())
+        else:
+            context["all_posts"] = "You don't have any publication, but you can change that right now!"
+
+        # context["last_actions"] = ...
+        # context["black_list"] = ...
+
+        context["instance"] = instance
         return context
 
     @method_decorator(owner_required)

@@ -7,6 +7,7 @@ from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
 
+from app.helpers import base_post_method
 from app.mixins import ViewWitsContext
 from app.models import Notification
 from community.forms import CreateCommunityForm
@@ -234,13 +235,12 @@ class AdminPanelView(ViewWitsContext):
     @method_decorator(owner_required)
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
-        edit_template = "community/create_community.html"
-
         form = CreateCommunityForm(request.POST, instance=context["instance"])
-        if form.is_valid():
-            instance = form.save(commit=False)
-            instance.save()
-            form.save()
-            return render(request, self.template_name, context)
+        edit_template = "community/create_community.html"
+        redirect_url = f"/community/name-{self.kwargs['name']}/"
+
+        redirect_response = base_post_method(form, redirect_url)
+        if redirect_response:
+            return redirect_response
 
         return render(request, edit_template, {"form": form})

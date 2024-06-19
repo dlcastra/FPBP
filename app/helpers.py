@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
+from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from .models import Comments
@@ -38,4 +39,12 @@ def post_request_details(request, form_with_files, redirect_url):
         instance.save()
         form.save()
 
+        return HttpResponseRedirect(redirect_url)
+
+
+def base_post_method(model_form, redirect_url):
+    if model_form.is_valid():
+        instance = model_form.save(commit=False)
+        instance.save()
+        model_form.save()
         return HttpResponseRedirect(redirect_url)

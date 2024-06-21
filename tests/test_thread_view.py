@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 import pytest
 from bs4 import BeautifulSoup
 from django.middleware.csrf import get_token
-from django.test import Client, TestCase
+from django.test import Client, TestCase, RequestFactory
 from django.urls import reverse
 from rest_framework import status
 
@@ -18,6 +18,7 @@ class TestThreadViews(TestCase):
         self.user1 = CustomUser.objects.create_user(username="testuser1", email="test@test.com", password="testpas")
         self.user2 = CustomUser.objects.create_user(username="testuser2", email="test@test.com", password="testpas")
         self.client = Client()
+        self.factory = RequestFactory()
         self.get_url = reverse("threads")
         self.post_url = reverse("new_thread")
         self.first_thread = Thread.objects.create(
@@ -47,7 +48,7 @@ class TestThreadViews(TestCase):
         assert "threads" in context
         assert "search_query" in context
         assert list(context["threads"]) == list(expected_threads)
-        self.assertTemplateUsed("threads/all_threads/threads_page.html")
+        self.assertTemplateUsed(response, "threads/all_threads/threads_page.html")
 
         # NEGATIVE RESULTS
         assert response.status_code != status.HTTP_401_UNAUTHORIZED
@@ -82,7 +83,7 @@ class TestThreadViews(TestCase):
         assert model_detail.id == self.first_thread.id
         assert model_detail.title == self.first_thread.title
         assert model_detail.context == self.first_thread.context
-        self.assertTemplateUsed("threads/threads_detail/thread_detail.html")
+        self.assertTemplateUsed(response, "threads/threads_detail/thread_detail.html")
 
         # NEGATIVE RESULTS
         assert response.status_code != status.HTTP_401_UNAUTHORIZED
@@ -90,51 +91,39 @@ class TestThreadViews(TestCase):
         assert response.status_code != status.HTTP_404_NOT_FOUND
         assert response.status_code != status.HTTP_405_METHOD_NOT_ALLOWED
 
-    def test_update_thread(self):  # Bad test. Needed fix.
-        self.client.force_login(user=self.user1)
+    def test_update_thread(self):
+        self.client.force_login(self.user1)
 
-        base_url = reverse("detail", kwargs={"pk": self.first_thread.id})
-        query_params = urlencode({"title": self.first_thread.title})
-        url = f"{base_url}?{query_params}"
-        response_get = self.client.get(
-            base_url,
-            {
-                "edit": "Edit",
-            },
-        )
-        soup = BeautifulSoup(response_get.content, "html.parser")
+        # Simulate a GET request with the "edit" parameter
+        url = reverse("detail", kwargs={"pk": self.first_thread.id})
+        response = self.client.get(f"{url}?edit=Edit")
 
-        csrf_token = soup.find("input", attrs={"name": "csrfmiddlewaretoken"})["value"]
-        form = response_get.context["form"]
-        instance = form.save(
-            commit=False,
-        )
+        # Check if the edit template is rendered
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTemplateUsed(response, 'threads/threads_detail/edit_thread.html')
+        self.assertIn('form', response.context)
+        self.assertEqual(response.context['form'].instance, self.first_thread)
 
-        data = {
-            "method": "GET",
-            "edit": "Edit",
-            "form": form,
-            "author": self.user1,
-            "csrfmiddlewaretoken": csrf_token,
-            "title": "title_first_thread",
-            "context": "updated content updated content updated content updated content",
+        # Simulate a POST request to update the thread
+        update_data = {
+            'title': 'updated_title',
+            'context': 'updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+            'author': self.user1.id,
         }
-        response = self.client.post(
-            base_url,
-            data,
-        )
-        soup = BeautifulSoup(response.content, "html.parser")
-        print(soup)
-        print(instance.author)
-        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        context = response.context
-        model_detail = context["model_detail"]
+        response = self.client.post(url, data=update_data)
 
-        assert response.status_code == status.HTTP_200_OK
-        self.assertTemplateUsed("threads/threads_detail/edit_thread.html")
-        print(model_detail.context)
+        # Print form errors if the response is not a redirect
+        if response.status_code != status.HTTP_302_FOUND:
+            form_errors = response.context['form'].errors
+            print("Form Errors:", form_errors)
+
         self.first_thread.refresh_from_db()
-        self.assertEqual(self.first_thread.context, data["context"])
+
+        # Check if the thread was updated and redirected correctly
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(self.first_thread.title, 'updated_title')
+        self.assertEqual(self.first_thread.context,
+                         'updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
 
     def test_methods_not_allowed(self):
         all_threads_url = reverse("threads")

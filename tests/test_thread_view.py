@@ -100,30 +100,31 @@ class TestThreadViews(TestCase):
 
         # Check if the edit template is rendered
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTemplateUsed(response, 'threads/threads_detail/edit_thread.html')
-        self.assertIn('form', response.context)
-        self.assertEqual(response.context['form'].instance, self.first_thread)
+        self.assertTemplateUsed(response, "threads/threads_detail/edit_thread.html")
+        self.assertIn("form", response.context)
+        self.assertEqual(response.context["form"].instance, self.first_thread)
 
         # Simulate a POST request to update the thread
         update_data = {
-            'title': 'updated_title',
-            'context': 'updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
-            'author': self.user1.id,
+            "title": "updated_title",
+            "context": "updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+            "author": self.user1.id,
         }
         response = self.client.post(url, data=update_data)
 
         # Print form errors if the response is not a redirect
         if response.status_code != status.HTTP_302_FOUND:
-            form_errors = response.context['form'].errors
+            form_errors = response.context["form"].errors
             print("Form Errors:", form_errors)
 
         self.first_thread.refresh_from_db()
 
         # Check if the thread was updated and redirected correctly
         self.assertEqual(response.status_code, status.HTTP_302_FOUND)
-        self.assertEqual(self.first_thread.title, 'updated_title')
-        self.assertEqual(self.first_thread.context,
-                         'updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv')
+        self.assertEqual(self.first_thread.title, "updated_title")
+        self.assertEqual(
+            self.first_thread.context, "updated_contextxcvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv"
+        )
 
     def test_methods_not_allowed(self):
         all_threads_url = reverse("threads")

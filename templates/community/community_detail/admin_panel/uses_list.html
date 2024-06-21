@@ -5,12 +5,15 @@
     <title>Title</title>
 </head>
 <body>
+<script>
+    function BAN(instance, follower_id) {
+        window.location.href = '/community/name-' + instance + '/admin-panel/put-ban/' +  follower_id + '/';
+    }
+</script>
 <h2>Followers list</h2>
 {% for follower in followers %}
     Username: {{ follower.user.username }} | ID: {{ follower.id }} <br>
-    <form method="get" action="/name-{{ instance }}/admin-panel/put-ban/{{ follower.id }}">
-        <input type="submit" value="BAN">
-    </form>
+    <button type="button" onclick="BAN('{{ instance }}', '{{ follower.id }}')">BAN</button>
 {% endfor %}
 </body>
 </html>

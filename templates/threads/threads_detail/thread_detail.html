@@ -30,7 +30,7 @@
     });
 </script>
 
-<form method="get">
+<form method="GET">
     {% if request.user.is_authenticated and request.user == model_detail.author %}
         <input type="submit" value="Edit" name="edit">
     {% endif %}

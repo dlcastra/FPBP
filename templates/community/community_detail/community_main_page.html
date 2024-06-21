@@ -56,7 +56,7 @@
 <h1>{{ community_data.name }}</h1>
 {% for admin in community_data.admins.all %}
     {% if not community_data.is_private or community_data.is_private and  is_follow_user.exists or admin %}
-        {% if request.user != admin and  not community_data.is_private%}
+        {% if request.user != admin and  not community_data.is_private or  is_follow_user.exists%}
             <button type="button" id="follow-button"
                     data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}"
                     value="follow">
@@ -81,7 +81,7 @@
 
         {% endif %}
     {% endif %}
-    {% if community_data.is_private and reqeust.user != admin %}
+    {% if community_data.is_private and reqeust.user != admin and not is_follow_user.exists%}
         <button type="button" id="request_btn"
                 data-action="{% if not request_status %}send_request{% else %}remove_request{% endif %}">
             {% if request_status %}Request already sent{% else %}Send Request{% endif %}

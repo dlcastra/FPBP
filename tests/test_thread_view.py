@@ -1,8 +1,13 @@
+import json
+from urllib.parse import urlencode
 import pytest
+from bs4 import BeautifulSoup
+from django.middleware.csrf import get_token
 from django.test import Client, TestCase
 from django.urls import reverse
 from rest_framework import status
 
+from app.forms import ThreadForm
 from app.models import Thread
 from users.models import CustomUser
 
@@ -19,7 +24,7 @@ class TestThreadViews(TestCase):
             id=1,
             title="title_first_thread",
             context="content",
-            author_id=self.user1.id,
+            author=self.user1,
             published_at="2024-06-12",
             status="published",
         )
@@ -27,7 +32,7 @@ class TestThreadViews(TestCase):
             id=2,
             title="title_second_thread",
             context="content",
-            author_id=self.user1.id,
+            author=self.user1,
             published_at="2024-06-12",
             status="published",
         )
@@ -87,20 +92,49 @@ class TestThreadViews(TestCase):
 
     def test_update_thread(self):  # Bad test. Needed fix.
         self.client.force_login(user=self.user1)
-        url = reverse("detail", kwargs={"pk": self.first_thread.id})
+
+        base_url = reverse("detail", kwargs={"pk": self.first_thread.id})
+        query_params = urlencode({"title": self.first_thread.title})
+        url = f"{base_url}?{query_params}"
+        response_get = self.client.get(
+            base_url,
+            {
+                "edit": "Edit",
+            },
+        )
+        soup = BeautifulSoup(response_get.content, "html.parser")
+
+        csrf_token = soup.find("input", attrs={"name": "csrfmiddlewaretoken"})["value"]
+        form = response_get.context["form"]
+        instance = form.save(
+            commit=False,
+        )
+
         data = {
+            "method": "GET",
+            "edit": "Edit",
+            "form": form,
+            "author": self.user1,
+            "csrfmiddlewaretoken": csrf_token,
             "title": "title_first_thread",
             "context": "updated content updated content updated content updated content",
         }
-
-        response = self.client.post(url, data)
+        response = self.client.post(
+            base_url,
+            data,
+        )
+        soup = BeautifulSoup(response.content, "html.parser")
+        print(soup)
+        print(instance.author)
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
         context = response.context
         model_detail = context["model_detail"]
 
         assert response.status_code == status.HTTP_200_OK
         self.assertTemplateUsed("threads/threads_detail/edit_thread.html")
         print(model_detail.context)
-        # assert model_detail.context == data["context"]
+        self.first_thread.refresh_from_db()
+        self.assertEqual(self.first_thread.context, data["context"])
 
     def test_methods_not_allowed(self):
         all_threads_url = reverse("threads")

@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
@@ -28,8 +29,7 @@ class CommunityView(ViewWitsContext):
         # PUBLICATION DATA
         author_id = community_data.admins.get(is_owner=True).user.id
         publication_form = PublishForm(initial={"author_id": author_id})
-        owner = get_object_or_404(Moderators, is_owner=True)
-        is_owner = Moderators.objects.filter(user=self.request.user, user__username=owner).exists()
+        is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
 
         # FOLLOWERS DATA
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
@@ -58,6 +58,7 @@ class CommunityView(ViewWitsContext):
 
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
+        community = context["community_data"]
         action = self.request.POST.get("action")
 
         # FOLLOW REQUESTS
@@ -82,12 +83,14 @@ class CommunityView(ViewWitsContext):
                 publication.content_type = ContentType.objects.get_for_model(request.user)
                 publication.save()
                 form.save()
-
+                community.posts.add(publication)
                 print("Yes")
                 return redirect(f"/community/name-{context.get('name')}/")
 
         else:
-            return redirect(f"/community/name-{context.get('name')}/")
+            messages.error(request, "Something went wrong")
+
+        return redirect(f"/community/name-{context.get('name')}/")
 
     def handle_follow_action(self, context):
         community = context.get("community_data")
@@ -271,7 +274,9 @@ class AdminPanelView(ViewWitsContext):
             community=get_object_or_404(Community, name=self.kwargs["name"]), is_follow=True
         ).all()
         template = "community/community_detail/admin_panel/uses_list.html"
-        return render(request, template, {"followers": followers})
+        return render(
+            request, template, {"followers": followers, "instance": self.get_context_data(request)["instance"]}
+        )
 
     def ban_user(self, request, *args, **kwargs):  # It's not over yet
         if request.method == "GET":

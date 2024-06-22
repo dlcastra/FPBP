@@ -141,8 +141,8 @@ class CreateCommunityView(View):
         form = self.form_class(request.POST)
         if form.is_valid():
             community = form.save(commit=True)
-            moderators, created = Moderators.objects.get_or_create(user=request.user, is_owner=True)
-            community.admins.add(moderators)
+            moderator = Moderators.objects.create(user=request.user, is_owner=True)
+            community.admins.add(moderator)
             return redirect(f"/community/name-{form.cleaned_data['name']}/")
 
         else:

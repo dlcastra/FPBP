@@ -1,13 +1,7 @@
-import json
-from urllib.parse import urlencode
 import pytest
-from bs4 import BeautifulSoup
-from django.middleware.csrf import get_token
 from django.test import Client, TestCase, RequestFactory
 from django.urls import reverse
 from rest_framework import status
-
-from app.forms import ThreadForm
 from app.models import Thread
 from users.models import CustomUser
 
@@ -111,12 +105,6 @@ class TestThreadViews(TestCase):
             "author": self.user1.id,
         }
         response = self.client.post(url, data=update_data)
-
-        # Print form errors if the response is not a redirect
-        if response.status_code != status.HTTP_302_FOUND:
-            form_errors = response.context["form"].errors
-            print("Form Errors:", form_errors)
-
         self.first_thread.refresh_from_db()
 
         # Check if the thread was updated and redirected correctly

@@ -30,27 +30,28 @@
     </script>
 </head>
 <body>
-{% csrf_token %} {{ user.username }}<br>
+{% csrf_token %} <label id="username">{{ user.username }}</label><br>
 {% if request.user != user %}
 
     <button type="button" id="follow-button" data-action="{% if is_following %}unfollow{% else %}follow{% endif %}">
         {% if is_following %}Unfollow{% else %}Follow{% endif %}: {{ user.followers_count }}
     </button>
+    {#    todo add url and create list of followers#}
     <a>User Followers</a>
     <br>
 {% else %}
     <a>My Followers: {{ user.followers_count }}</a>
 {% endif %}
 {% if request.user == user %}
-    <label>My Followings: {{ user.followings_count }}</label><br>
+    <label id="followings_id_user">My Followings: {{ user.followings_count }}</label><br>
 {% else %}
-    <label>User Followings: {{ user.followings_count }}</label><br>
+    <label id="followings_id">User Followings: {{ user.followings_count }}</label><br>
 {% endif %}
 {% if user == request.user %}
-    <a href="{% url "new_publication" user.username %}">New Publication</a>
+    <a id="create_publication_id" href="{% url "new_publication" user.username %}">New Publication</a>
 {% endif %}
 {% for publication in publications %}
-    <a href="/publication/{{ publication.id }}">{{ publication.title }}</a>
+    <a id="publication_id" href="/publication/{{ publication.id }}">{{ publication.title }}</a>
 {% endfor %}
 </body>
 </html>

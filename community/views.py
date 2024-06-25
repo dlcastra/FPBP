@@ -197,6 +197,7 @@ class FollowersRequestListView(View):
 
 class AdminPanelView(ViewWitsContext):
     template_name = "community/community_detail/admin_panel/adminpanel.html"
+
     """
     What needs to be added:
         1. Possibility of banning users
@@ -212,7 +213,7 @@ class AdminPanelView(ViewWitsContext):
         context = super().get_context_data(request)
         instance = get_object_or_404(Community, name=self.kwargs["name"])
 
-        # Community managers data
+        # COMMUNITY MANAGERS DATA
         context["owner"] = get_object_or_404(Moderators, is_owner=True)
         context["admins"] = Moderators.objects.filter(is_admin=True)
         context["moderators"] = Moderators.objects.filter(is_moderator=True)
@@ -222,21 +223,23 @@ class AdminPanelView(ViewWitsContext):
         if not context["moderators"]:
             context["moderators"] = "You have no moderators yet"
 
-        # Community base data
+        # COMMUNITY BASE DATA
         context["instance"] = instance
         context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
         context["black_list"] = BlackList.objects.filter(community=context["community_id"])
+        # context["last_actions"] = ...
 
-        # Get community publications
+        # GET COMMUNITY PUBLICATIONS
         owner = instance.admins.filter(is_owner=True).first()
         if owner:
             context["all_posts"] = list(Publication.objects.filter(author_id=owner.user.id).values())
         else:
             context["all_posts"] = "You don't have any publication, but you can change that right now!"
 
-        # context["last_actions"] = ...
         return context
+
+    """ -------- BASE METHODS: Call a specific function depending on the keyword -------- """
 
     @method_decorator(owner_required)
     def get(self, request, *args, **kwargs):
@@ -261,11 +264,13 @@ class AdminPanelView(ViewWitsContext):
     @method_decorator(owner_required)
     def post(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
+
+        # CONTEXT VARIABLES
         form = CreateCommunityForm(request.POST, instance=context["instance"])
         edit_template = "community/create_community.html"
-        redirect_url = f"/community/name-{self.kwargs['name']}/"
-
+        redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
         redirect_response = base_post_method(form, redirect_url)
+
         if redirect_response:
             return redirect_response
 
@@ -274,37 +279,46 @@ class AdminPanelView(ViewWitsContext):
 
         return render(request, edit_template, {"form": form})
 
+    """ -------- LIST FUNCTIONS: Return lists of objects -------- """
+
     def get_followers(self, request, **kwargs):
-        followers = CommunityFollowers.objects.filter(
-            community=get_object_or_404(Community, name=self.kwargs["name"]), is_follow=True
-        ).all()
-        template = "community/community_detail/admin_panel/uses_list.html"
-        return render(
-            request, template, {"followers": followers, "instance": self.get_context_data(request)["instance"]}
-        )
+        # CONTEXT VARIABLES
+        community = get_object_or_404(Community, name=self.kwargs["name"])
+        followers = CommunityFollowers.objects.filter(community=community, is_follow=True).all()
+        users_list_template = "community/community_detail/admin_panel/users_list.html"
+        context_data = {"followers": followers, "instance": self.get_context_data(request)["instance"]}
+
+        return render(request, users_list_template, context_data)
 
     def get_banned_users(self, request, **kwargs):
+        # CONTEXT VARIABLES
         context = self.get_context_data(request, **kwargs)
-        template = "community/community_detail/admin_panel/uses_list.html"  # We need to create a different template
-        return render(
-            request,
-            template,
-            {"followers": context["black_list"], "instance": self.get_context_data(request)["instance"]},
-        )
+        template = "community/community_detail/admin_panel/users_list.html"  # We need to create a different template
+        black_list_context = {
+            "followers": context["black_list"],
+            "instance": self.get_context_data(request)["instance"],
+        }
+
+        return render(request, template, black_list_context)
+
+    """ -------- MAIN LOGIC FUNCTIONS: Change the values and position of objects in tables -------- """
 
     def ban_user(self, request, *args, **kwargs):
+        # CONTEXT VARIABLES
         context = self.get_context_data(request)
-        follower_id = CommunityFollowers.objects.get(
-            community=context["community_data"], is_follow=True, id=self.kwargs["follower_id"]
-        ).id
-        form = BlackListForm(request.POST, initial={"user": follower_id, "community": context["community_data"]})
+        community_id = context["community_id"]
+        id_from_url = self.kwargs["follower_id"]
+        follower_id = CommunityFollowers.objects.get(community=community_id, is_follow=True, id=id_from_url).id
         ban_template = "community/community_detail/admin_panel/put_ban.html"
         redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
 
+        # GET REQUESTS
         if request.method == "GET":
-            form = BlackListForm(initial={"user": follower_id, "community": context["community_data"]})
+            form = BlackListForm(initial={"user": follower_id, "community": context["community_id"]})
             return render(request, ban_template, {"form": form})
 
+        # POST REQUESTS
+        form = BlackListForm(request.POST, initial={"user": follower_id, "community": context["community_id"]})
         redirect_response = base_post_method(form, redirect_url)
         if redirect_response:
             return redirect_response

@@ -12,7 +12,7 @@ from app.helpers import base_post_method
 from app.mixins import ViewWitsContext
 from app.models import Notification
 from community.forms import CreateCommunityForm, BlackListForm
-from community.models import Community, CommunityFollowers, CommunityFollowRequests
+from community.models import Community, CommunityFollowers, CommunityFollowRequests, BlackList
 from core.decorators import owner_required
 from users.forms import PublishForm
 from users.models import Moderators, Publication
@@ -78,13 +78,12 @@ class CommunityView(ViewWitsContext):
         elif "new_post" in request.POST and context["is_owner"]:
             form = PublishForm(request.POST, request.FILES, initial={"author_id": context["author_id"]})
             if form.is_valid:
-                # NEED FIX
                 publication = form.save(commit=False)
                 publication.content_type = ContentType.objects.get_for_model(request.user)
                 publication.save()
                 form.save()
                 community.posts.add(publication)
-                print("Yes")
+
                 return redirect(f"/community/name-{context.get('name')}/")
 
         else:
@@ -224,7 +223,10 @@ class AdminPanelView(ViewWitsContext):
             context["moderators"] = "You have no moderators yet"
 
         # Community base data
+        context["instance"] = instance
+        context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
+        context["black_list"] = BlackList.objects.filter(community=context["community_id"])
 
         # Get community publications
         owner = instance.admins.filter(is_owner=True).first()
@@ -234,9 +236,6 @@ class AdminPanelView(ViewWitsContext):
             context["all_posts"] = "You don't have any publication, but you can change that right now!"
 
         # context["last_actions"] = ...
-        # context["black_list"] = ...
-
-        context["instance"] = instance
         return context
 
     @method_decorator(owner_required)
@@ -251,8 +250,11 @@ class AdminPanelView(ViewWitsContext):
         if "followers_list" in request.GET:
             return self.get_followers(request)
 
+        if "blacklist" in request.GET:
+            return self.get_banned_users(request, **kwargs)
+
         if "put_ban" in request.GET:
-            return self.ban_user
+            return self.ban_user(request, *args, **kwargs)
 
         return render(request, self.template_name, context)
 
@@ -267,6 +269,9 @@ class AdminPanelView(ViewWitsContext):
         if redirect_response:
             return redirect_response
 
+        if "put_ban" in request.POST:
+            return self.ban_user(request, *args, **kwargs)
+
         return render(request, edit_template, {"form": form})
 
     def get_followers(self, request, **kwargs):
@@ -278,13 +283,30 @@ class AdminPanelView(ViewWitsContext):
             request, template, {"followers": followers, "instance": self.get_context_data(request)["instance"]}
         )
 
-    def ban_user(self, request, *args, **kwargs):  # It's not over yet
-        if request.method == "GET":
-            ban_template = "community/community_detail/admin_panel/put_ban.html"
-            community_id = Community.objects.get(name=self.kwargs["name"]).id
-            follower_id = CommunityFollowers.objects.get(
-                community=community_id, is_follow=True, id=self.kwargs["follower_id"]
-            )
-            form = BlackListForm(initial={"community": community_id, "user": follower_id})
+    def get_banned_users(self, request, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        template = "community/community_detail/admin_panel/uses_list.html"  # We need to create a different template
+        return render(
+            request,
+            template,
+            {"followers": context["black_list"], "instance": self.get_context_data(request)["instance"]},
+        )
 
+    def ban_user(self, request, *args, **kwargs):
+        context = self.get_context_data(request)
+        follower_id = CommunityFollowers.objects.get(
+            community=context["community_data"], is_follow=True, id=self.kwargs["follower_id"]
+        ).id
+        form = BlackListForm(request.POST, initial={"user": follower_id, "community": context["community_data"]})
+        ban_template = "community/community_detail/admin_panel/put_ban.html"
+        redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
+
+        if request.method == "GET":
+            form = BlackListForm(initial={"user": follower_id, "community": context["community_data"]})
             return render(request, ban_template, {"form": form})
+
+        redirect_response = base_post_method(form, redirect_url)
+        if redirect_response:
+            return redirect_response
+
+        return render(request, ban_template, {"form": form})

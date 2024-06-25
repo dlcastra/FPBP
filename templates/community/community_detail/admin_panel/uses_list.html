@@ -13,7 +13,10 @@
 <h2>Followers list</h2>
 {% for follower in followers %}
     Username: {{ follower.user.username }} | ID: {{ follower.id }} <br>
-    <button type="button" onclick="BAN('{{ instance }}', '{{ follower.id }}')">BAN</button>
+    <form method="get" action="{% url 'put_ban' name=instance follower_id=follower.id %}">
+        <input type="submit" value="SELECT" name="put_ban">
+    </form>
 {% endfor %}
+
 </body>
 </html>

@@ -55,8 +55,8 @@ def form_check_len(context: str, min_len: int, max_len: int, min_error: str, max
         raise forms.ValidationError("Context cannot be empty")
 
     if len(context) < min_len:
-        raise forms.ValidationError(f"{min_error}, minimum length is {min}")
+        raise forms.ValidationError(f"{min_error}, minimum length is {min_len}")
     elif len(context) > max_len:
-        raise forms.ValidationError(f"{max_error}, maximum length is {max}")
+        raise forms.ValidationError(f"{max_error}, maximum length is {max_len}")
 
     return context

@@ -34,7 +34,7 @@ class CommunityFollowRequests(models.Model):
 
 
 class BlackList(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="banned")
+    user = models.ForeignKey(CommunityFollowers, on_delete=models.CASCADE, related_name="banned")
     community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name="banned_in")
     reason = models.TextField(max_length=500)
 

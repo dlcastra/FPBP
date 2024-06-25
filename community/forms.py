@@ -33,13 +33,13 @@ class BlackListForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BlackListForm, self).__init__(*args, **kwargs)
-        self.fields["user"].widget = forms.HiddenInput()
+        # self.fields["user"].widget = forms.HiddenInput()
         self.fields["user"].initial = kwargs.get("initial", {}).get("user")
-        self.fields["community"].widget = forms.HiddenInput()
+        # self.fields["community"].widget = forms.HiddenInput()
         self.fields["community"].initial = kwargs.get("initial", {}).get("community")
 
     def clean_reason(self):
         reason = self.cleaned_data["reason"]
         too_short_error = "Please add more details to the reason"
         too_long_error = "The reason is too long"
-        form_check_len(reason, 50, 2000, too_short_error, too_long_error)
+        return form_check_len(reason, 50, 2000, too_short_error, too_long_error)

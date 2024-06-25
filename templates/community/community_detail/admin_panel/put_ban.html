@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    {{ form.as_p }}
 </head>
 <body>
-
+BAN PAGE
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" name="put_ban" value="Accept">
+</form>
 </body>
 </html>

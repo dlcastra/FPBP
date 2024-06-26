@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Black List</title>
+    <style>
+        table {
+            width: 80%;
+            margin: 20px auto;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            text-align: center;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+<h1>Black List for {{ instance.name }}</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Username</th>
+        <th>Follower ID</th>
+        <th>Reason</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for banned_follower in banned_users %}
+        {% for follower in followers %}
+            {% if banned_follower.id == follower.user.id %}
+                <tr>
+                    <td>{{ banned_follower.username }}</td>
+                    <td>{{ follower.id }}</td>
+                    <td>{{ banned_follower.reason }}</td>
+                    <td>
+                        <form method="POST" action="">
+                            {% csrf_token %}
+                            <input type="hidden" name="blacklist_id" value="{{ banned_follower.blacklist_id }}">
+                            <input type="hidden" name="action" value="remove">
+                            <button type="submit" name="remove_ban">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>

@@ -226,8 +226,20 @@ class AdminPanelView(ViewWitsContext):
         # COMMUNITY BASE DATA
         context["instance"] = instance
         context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
-        context["followers"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
-        context["black_list"] = BlackList.objects.filter(community=context["community_id"])
+        context["followers_count"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
+        context["followers_list"] = CommunityFollowers.objects.filter(community=instance, is_follow=True)
+        context["black_list"] = BlackList.objects.filter(community=instance).select_related("user__user")
+        banned_users = [
+            {
+                "id": entry.user.user.id,
+                "blacklist_id": entry.id,
+                "username": entry.user.user.username,
+                "reason": entry.reason,
+            }
+            for entry in context["black_list"]
+        ]
+        context["banned_users"] = banned_users
+
         # context["last_actions"] = ...
 
         # GET COMMUNITY PUBLICATIONS
@@ -277,6 +289,9 @@ class AdminPanelView(ViewWitsContext):
         if "put_ban" in request.POST:
             return self.ban_user(request, *args, **kwargs)
 
+        if "remove_ban" in request.POST:
+            return self.delete_user_from_blacklist(request)
+
         return render(request, edit_template, {"form": form})
 
     """ -------- LIST FUNCTIONS: Return lists of objects -------- """
@@ -293,9 +308,11 @@ class AdminPanelView(ViewWitsContext):
     def get_banned_users(self, request, **kwargs):
         # CONTEXT VARIABLES
         context = self.get_context_data(request, **kwargs)
-        template = "community/community_detail/admin_panel/users_list.html"  # We need to create a different template
+        template = "community/community_detail/admin_panel/black_list.html"
+
         black_list_context = {
-            "followers": context["black_list"],
+            "banned_users": context["banned_users"],
+            "followers": context["followers_list"],
             "instance": self.get_context_data(request)["instance"],
         }
 
@@ -324,3 +341,12 @@ class AdminPanelView(ViewWitsContext):
             return redirect_response
 
         return render(request, ban_template, {"form": form})
+
+    def delete_user_from_blacklist(self, request, **kwargs):
+        if request.method == "POST" and request.POST.get("action") == "remove":
+            blacklist_user_id = request.POST.get("blacklist_id")
+            blacklist_user = BlackList.objects.get(id=blacklist_user_id)
+            blacklist_user.delete()
+
+            return redirect(request.path_info)
+        return redirect(request.path_info)

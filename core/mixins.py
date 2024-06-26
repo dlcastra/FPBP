@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import TemplateView, View, DetailView
 from abc import ABC, abstractmethod
 
-from app.helpers import data_handler, post_request_details
+from core.helpers import data_handler, post_request_details
 from app.models import Comments
 from users.models import CustomUser
 

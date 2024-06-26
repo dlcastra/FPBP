@@ -1,6 +1,6 @@
 from django import forms
 
-from app.helpers import form_check_len
+from core.helpers import form_check_len
 from community.models import Community, BlackList
 
 

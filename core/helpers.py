@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
 
-from .models import Comments
+from app.models import Comments
 
 
 def data_handler(request, pk, template, model_pk):

@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView
 
-from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
+from core.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 

@@ -9,8 +9,8 @@ from django.views.generic import DetailView
 from users.models import CustomUser, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from .helpers import post_request_details
-from .mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
+from core.helpers import post_request_details
+from core.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification
 from .models import Thread
 

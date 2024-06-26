@@ -8,8 +8,8 @@ from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
 
-from app.helpers import base_post_method
-from app.mixins import ViewWitsContext
+from core.helpers import base_post_method
+from core.mixins import ViewWitsContext
 from app.models import Notification
 from community.forms import CreateCommunityForm, BlackListForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests, BlackList

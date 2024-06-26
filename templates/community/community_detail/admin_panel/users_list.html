@@ -2,21 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Admin Panel</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body>
 <script>
-    function BAN(instance, follower_id) {
-        window.location.href = '/community/name-' + instance + '/admin-panel/put-ban/' +  follower_id + '/';
-    }
+    $(document).ready(function () {
+        $('form').submit(function (event) {
+            event.preventDefault();
+
+            let reason = prompt("Ban reason");
+            if (reason && reason.length >= 50) {
+                const csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+                const followerId = $(this).find('input').data('follower-id');
+                const instance = $(this).find('input').data('instance');
+                let action = $(this).data("action")
+                $.ajax({
+                    type: 'POST',
+                    url: `/community/name-${instance}/admin-panel/put-ban/${followerId}/`,
+                    data: JSON.stringify({
+                        follower_id: followerId,
+                        reason: reason,
+                        instance: instance,
+                        action: action,
+
+                    }),
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    success: function (response) {
+                        alert("User banned successfully");
+                        window.location.href = `/community/name-${instance}/admin-panel/`;  // Redirect to refresh
+                    },
+                    error: function (xhr, status, error) {
+                        alert("Error banning user: " + xhr.responseText);
+                    }
+                });
+
+            } else {
+                alert("Reason must be at least 50 characters long");
+            }
+        });
+    });
 </script>
+
 <h2>Followers list</h2>
+{% csrf_token %}
 {% for follower in followers %}
-    Username: {{ follower.user.username }} | ID: {{ follower.user.id }} <br>
-    <form method="get" action="{% url 'put_ban' name=instance follower_id=follower.user.id %}">
-        <input type="submit" value="SELECT" name="put_ban">
+    <form data-action="put_ban" method="post">
+        <div>
+            Username: {{ follower.user.username }} | ID: {{ follower.user.id }} <br>
+            <input type="submit" name="put_ban" value="SELECT"
+                   data-follower-id="{{ follower.user.id }}"
+                   data-instance="{{ instance }}">
+            <input hidden="hidden" type="hidden" name="put_ban" value="put_ban" data-action="put_ban">
+
+        </div>
     </form>
 {% endfor %}
-
 </body>
 </html>

@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.http import JsonResponse
@@ -6,6 +8,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView
 
 from core.helpers import base_post_method
@@ -231,7 +234,7 @@ class AdminPanelView(ViewWitsContext):
         context["black_list"] = BlackList.objects.filter(community=instance).select_related("user__user")
         banned_users = [
             {
-                "id": entry.user.user.id,
+                "id": entry.user.id,
                 "blacklist_id": entry.id,
                 "username": entry.user.user.username,
                 "reason": entry.reason,
@@ -268,9 +271,6 @@ class AdminPanelView(ViewWitsContext):
         if "blacklist" in request.GET:
             return self.get_banned_users(request, **kwargs)
 
-        if "put_ban" in request.GET:
-            return self.ban_user(request, *args, **kwargs)
-
         return render(request, self.template_name, context)
 
     @method_decorator(owner_required)
@@ -286,8 +286,8 @@ class AdminPanelView(ViewWitsContext):
         if redirect_response:
             return redirect_response
 
-        if "put_ban" in request.POST:
-            return self.ban_user(request, *args, **kwargs)
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return self.put_ban(request)
 
         if "remove_ban" in request.POST:
             return self.delete_user_from_blacklist(request)
@@ -320,27 +320,34 @@ class AdminPanelView(ViewWitsContext):
 
     """ -------- MAIN LOGIC FUNCTIONS: Change the values and position of objects in tables -------- """
 
-    def ban_user(self, request, *args, **kwargs):
-        # CONTEXT VARIABLES
-        context = self.get_context_data(request)
-        community_id = context["community_id"]
-        id_from_url = self.kwargs["follower_id"]
-        follower_id = CommunityFollowers.objects.get(community=community_id, is_follow=True, user_id=id_from_url).id
-        ban_template = "community/community_detail/admin_panel/put_ban.html"
-        redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
+    @csrf_exempt
+    @method_decorator(owner_required)
+    def put_ban(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            print(data)
+            follower_id = data["follower_id"]
+            reason = data["reason"]
+            instance_name = data["instance"]
 
-        # GET REQUESTS
-        if request.method == "GET":
-            form = BlackListForm(initial={"user": follower_id, "community": context["community_id"]})
-            return render(request, ban_template, {"form": form})
+            if follower_id and reason and instance_name:
+                community = get_object_or_404(Community, name=instance_name)
+                blacklist, created = BlackList.objects.get_or_create(
+                    user_id=follower_id, community=community, defaults={"reason": reason}
+                )
+                if not created:
+                    blacklist.reason = reason
+                    blacklist.save()
+                return JsonResponse({"status": "success"})
 
-        # POST REQUESTS
-        form = BlackListForm(request.POST, initial={"user": follower_id, "community": context["community_id"]})
-        redirect_response = base_post_method(form, redirect_url)
-        if redirect_response:
-            return redirect_response
+            return JsonResponse(
+                {"status": "error", "message": "Missing follower_id, reason, or instance name"}, status=400
+            )
 
-        return render(request, ban_template, {"form": form})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
     def delete_user_from_blacklist(self, request, **kwargs):
         if request.method == "POST" and request.POST.get("action") == "remove":

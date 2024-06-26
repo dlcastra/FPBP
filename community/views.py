@@ -325,7 +325,7 @@ class AdminPanelView(ViewWitsContext):
         context = self.get_context_data(request)
         community_id = context["community_id"]
         id_from_url = self.kwargs["follower_id"]
-        follower_id = CommunityFollowers.objects.get(community=community_id, is_follow=True, id=id_from_url).id
+        follower_id = CommunityFollowers.objects.get(community=community_id, is_follow=True, user_id=id_from_url).id
         ban_template = "community/community_detail/admin_panel/put_ban.html"
         redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
 

@@ -12,8 +12,8 @@
 </script>
 <h2>Followers list</h2>
 {% for follower in followers %}
-    Username: {{ follower.user.username }} | ID: {{ follower.id }} <br>
-    <form method="get" action="{% url 'put_ban' name=instance follower_id=follower.id %}">
+    Username: {{ follower.user.username }} | ID: {{ follower.user.id }} <br>
+    <form method="get" action="{% url 'put_ban' name=instance follower_id=follower.user.id %}">
         <input type="submit" value="SELECT" name="put_ban">
     </form>
 {% endfor %}

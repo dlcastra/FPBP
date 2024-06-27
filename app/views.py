@@ -1,11 +1,12 @@
 import json
 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
 from django.views import View
 from django.views.generic import DetailView
 
+from community.models import Community
 from users.models import CustomUser, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
@@ -48,6 +49,32 @@ class MainPageView(View):
                 notification.delete()
                 return HttpResponse(json.dumps({"status": "ok"}), content_type="application/json")
         return HttpResponse(json.dumps({"status": "error"}), status=400, content_type="application/json")
+
+
+async def search_function(request):
+    return render(request, "main_page/search_bar.html")
+
+
+class AutocompleteSearchView(DetailView):
+    def get(self, request, *args, **kwargs):
+        query = request.GET.get("term", "")
+        users = CustomUser.objects.filter(username__icontains=query)
+        threads = Thread.objects.filter(title__icontains=query)
+        communities = Community.objects.filter(name__icontains=query)
+
+        # Collecting data for autocomplete suggestions
+        suggestions = []
+
+        for user in users:
+            suggestions.append({"label": user.username, "url": f"/user-page/{user.username}/"})
+
+        for thread in threads:
+            suggestions.append({"label": thread.title, "url": f"/thread-detail/{thread.id}/"})
+
+        for community in communities:
+            suggestions.append({"label": community.name, "url": f"/community/name-{community.name}/"})
+
+        return JsonResponse(suggestions, safe=False)
 
 
 # ------------------------ THREADS VIEWS ------------------------

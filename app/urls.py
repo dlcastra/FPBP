@@ -18,4 +18,7 @@ urlpatterns = [
     path("tutorials/<str:slug>/<int:page_id>/", views.TutorialPageView.as_view(), name="tutorials"),
     # RECOMMENDATIONS URLS
     path("recommendations/", views.RecommendationFeedView.as_view(), name="recommendations"),
+    # SEARCH URLS
+    path("search/", views.search_function, name="search"),
+    path("search/autocmplete/", views.AutocompleteSearchView.as_view(), name="autocomplete"),
 ]

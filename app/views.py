@@ -51,8 +51,21 @@ class MainPageView(View):
         return HttpResponse(json.dumps({"status": "error"}), status=400, content_type="application/json")
 
 
-async def search_function(request):
-    return render(request, "main_page/search_bar.html")
+class SearchView(View):
+    def get(self, request, *args, **kwargs):
+        search_query = request.GET.get("search", "")
+        if search_query:
+            users = CustomUser.objects.filter(username__icontains=search_query).all()
+            threads = Thread.objects.filter(title__icontains=search_query).all()
+            communities = Community.objects.filter(name__icontains=search_query).all()
+
+            res_user = [user.username for user in users]
+            res_threads = [thread.title for thread in threads]
+            res_communities = [community.name for community in communities]
+
+            results = res_user + res_threads + res_communities
+            return render(request, "main_page/search_list.html", {"results": results})
+        return render(request, "main_page/search_bar.html")
 
 
 class AutocompleteSearchView(DetailView):

@@ -19,6 +19,6 @@ urlpatterns = [
     # RECOMMENDATIONS URLS
     path("recommendations/", views.RecommendationFeedView.as_view(), name="recommendations"),
     # SEARCH URLS
-    path("search/", views.search_function, name="search"),
+    path("search/", views.SearchView.as_view(), name="search"),
     path("search/autocmplete/", views.AutocompleteSearchView.as_view(), name="autocomplete"),
 ]

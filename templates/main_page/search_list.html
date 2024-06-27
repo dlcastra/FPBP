@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <title>Title</title>
 </head>
-<body>
-{% include "main_page/search_bar.html" %}
-{% if results %}
-    {% for result in results %}
-        {{ result }}<br>
-    {% endfor %}
-{% else %}
-    Nothing was found
-{% endif %}
-</body>
+<a>
+    {% include "main_page/search_bar.html" %}
+    {% if results %}
+        {% for result in results %}
+            <a href="{{ result.link }}">{{ result.title }}</a><br>
+        {% endfor %}
+    {% else %}
+        Nothing was found
+    {% endif %}
+    </body>
 </html>

@@ -59,9 +59,11 @@ class SearchView(View):
             threads = Thread.objects.filter(title__icontains=search_query).all()
             communities = Community.objects.filter(name__icontains=search_query).all()
 
-            res_user = [user.username for user in users]
-            res_threads = [thread.title for thread in threads]
-            res_communities = [community.name for community in communities]
+            res_user = [{{"title"}: user.username, "link": f"/user-page/{user.username}/"} for user in users]
+            res_threads = [{"title": thread.title, "link": f"/thread-detail/{thread.id}"} for thread in threads]
+            res_communities = [
+                {"title": community.name, "link": f"/community/name-{community.name}/"} for community in communities
+            ]
 
             results = res_user + res_threads + res_communities
             return render(request, "main_page/search_list.html", {"results": results})

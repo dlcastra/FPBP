@@ -12,8 +12,8 @@ urlpatterns = [
     ),
     path("name-<name>/admin-panel/", views.AdminPanelView.as_view(), name="admin_panel"),
     path(
-        "name-<str:name>/admin-panel/put-ban/<int:follower_id>/",
-        views.AdminPanelView.as_view(),
-        name="put_ban",
+        "name-<str:name>/admin-panel/blacklist/<int:follower_id>/",
+        views.BlackListView.as_view(),
+        name="blacklist",
     ),
 ]

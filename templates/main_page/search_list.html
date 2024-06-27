@@ -6,8 +6,12 @@
 </head>
 <body>
 {% include "main_page/search_bar.html" %}
-{% for result in results %}
-{{ result }}
-{% endfor %}
+{% if results %}
+    {% for result in results %}
+        {{ result }}<br>
+    {% endfor %}
+{% else %}
+    Nothing was found
+{% endif %}
 </body>
 </html>

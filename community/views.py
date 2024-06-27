@@ -11,12 +11,12 @@ from django.utils.safestring import mark_safe
 from django.views import View
 from django.views.generic import ListView
 
-from core.helpers import base_post_method
-from core.mixins import ViewWitsContext
 from app.models import Notification
 from community.forms import CreateCommunityForm, BlackListForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests, BlackList
 from core.decorators import owner_required
+from core.helpers import base_post_method
+from core.mixins import ViewWitsContext
 from users.forms import PublishForm
 from users.models import Moderators, Publication
 
@@ -346,8 +346,15 @@ class BlackListView(ViewWitsContext):
             for entry in context["black_list"]
         ]
         community = get_object_or_404(Community, name=self.kwargs["name"])
-        context["followers"] = CommunityFollowers.objects.filter(community=community, is_follow=True).all()
+        context["followers"] = CommunityFollowers.objects.filter(community=community, is_follow=True)
         context["banned_users"] = banned_users
+
+        # context["followers"] = []
+        # for banned_user in banned_users:
+        #     for follower in followers:
+        #         if follower.user.username not in banned_user["username"]:
+        #             context["followers"].append(follower)
+        # print(context["followers"])
         context["community"] = community
         return context
 

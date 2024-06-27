@@ -19,7 +19,7 @@
                 let action = $(this).data("action")
                 $.ajax({
                     type: 'POST',
-                    url: `/community/name-${instance}/admin-panel/put-ban/${followerId}/`,
+                    url: `/community/name-${instance}/admin-panel/blacklist/${followerId}/`,
                     data: JSON.stringify({
                         follower_id: followerId,
                         reason: reason,

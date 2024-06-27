@@ -172,3 +172,15 @@ class ViewWitsContext(View):
     def get_context_data(self, request, **kwargs):
         context = {}
         return context
+
+
+class BlackListMixin(ABC, ViewWitsContext):
+    @property
+    @abstractmethod
+    def get_model_class(self):
+        pass
+
+    @property
+    @abstractmethod
+    def get_model_class_form(self):
+        pass

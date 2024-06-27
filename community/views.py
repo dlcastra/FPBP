@@ -286,10 +286,7 @@ class AdminPanelView(ViewWitsContext):
         if redirect_response:
             return redirect_response
 
-        if (
-            request.headers.get("X-Requested-With") == "XMLHttpRequest"
-            and json.loads(request.body)["action"] == "put_ban"
-        ):
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return self.put_ban(request)
 
         if "remove_ban" in request.POST:

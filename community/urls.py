@@ -12,7 +12,7 @@ urlpatterns = [
     ),
     path("name-<name>/admin-panel/", views.AdminPanelView.as_view(), name="admin_panel"),
     path(
-        "name-<str:name>/admin-panel/blacklist/<int:follower_id>/",
+        "name-<str:name>/admin-panel/blacklist/",
         views.BlackListView.as_view(),
         name="blacklist",
     ),

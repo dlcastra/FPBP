@@ -84,7 +84,7 @@ class AutocompleteSearchView(DetailView):
             suggestions.append({"label": user.username, "url": f"/user-page/{user.username}/"})
 
         for thread in threads:
-            suggestions.append({"label": thread.title, "url": f"/thread-detail/{thread.id}/"})
+            suggestions.append({"label": thread.title, "url": f"/thread-detail/{thread.id}"})
 
         for community in communities:
             suggestions.append({"label": community.name, "url": f"/community/name-{community.name}/"})

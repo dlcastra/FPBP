@@ -285,7 +285,10 @@ class AdminPanelView(ViewWitsContext):
         if redirect_response:
             return redirect_response
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        if (
+            request.headers.get("X-Requested-With") == "XMLHttpRequest"
+            and json.loads(request.body)["action"] == "put_ban"
+        ):
             community_name = self.kwargs["name"]
             follower_id = self.kwargs["follower_id"]
             return redirect("blacklist", name=community_name, follower_id=follower_id)

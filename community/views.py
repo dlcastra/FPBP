@@ -347,12 +347,15 @@ class BlackListView(ViewWitsContext):
         ]
         community = get_object_or_404(Community, name=self.kwargs["name"])
         followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
-        banned_users_ids = [banned_user["id"] for banned_user in banned_users]
+
         context["banned_users"] = banned_users
+        banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
         context["followers"] = []
         for follower in followers:
-            if follower.user.id in banned_users_ids:
+            if follower.user.id not in banned_user_list:
                 context["followers"].append(follower)
+            elif not banned_user_list:
+                context["followers"] = followers
         context["community"] = community
         return context
 

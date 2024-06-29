@@ -36,16 +36,21 @@
     <button type="button" id="follow-button" data-action="{% if is_following %}unfollow{% else %}follow{% endif %}">
         {% if is_following %}Unfollow{% else %}Follow{% endif %}: {{ user.followers_count }}
     </button>
-    {#    todo add url and create list of followers#}
-    <a>User Followers</a>
+
+    {% include "account/followers_list.html" %}
     <br>
-{% else %}
-    <a>My Followers: {{ user.followers_count }}</a>
+
 {% endif %}
 {% if request.user == user %}
-    <label id="followings_id_user">My Followings: {{ user.followings_count }}</label><br>
+
+    <a id="followings_id_user" href="{% url "user_followers" user.username %}">
+        My Followers: {{ user.followers_count }}</a><br>
+    <a href="{% url "user_followings" user.username %}">My Followings: {{ user.followings_count }}</a><br>
 {% else %}
-    <label id="followings_id">User Followings: {{ user.followings_count }}</label><br>
+    <a id="followers_id_user" href="{% url "user_followers" user.username %}">
+        User Followers: {{ user.followers_count }}</a><br>
+    <a id="followings_id" href="{% url "user_followings" username=user.username %}">
+        User Followings: {{ user.followings_count }}</a><br>
 {% endif %}
 {% if user == request.user %}
     <a id="create_publication_id" href="{% url "new_publication" user.username %}">New Publication</a>

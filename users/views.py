@@ -45,6 +45,20 @@ class CustomUserChangeView(LoginRequiredMixin, View):
             )
 
 
+class FollowersListView(ListView):
+    template_name = "account/followers_list.html"
+
+    def get_queryset(self):
+        return Followers.objects.filter(user__username=self.kwargs["username"], is_follow=True)
+
+
+class FollowingsListView(ListView):
+    template_name = "account/followings_list.html"
+
+    def get_queryset(self):
+        return Followers.objects.filter(following__username=self.kwargs["username"], is_follow=True)
+
+
 # ------------------------ Disconnect Account func ------------------------
 @login_required
 def disconnect_account(request, provider):

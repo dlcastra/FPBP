@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView
 
-from core.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
+from core.mixins import RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 
@@ -176,13 +176,6 @@ class PublicationDetailView(DetailMixin, View):
 
 # ------------------------ COMMENTS SECTION ------------------------
 
-
-class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
-    def get_model_class(self):
-        return Publication
-
-    def get_template(self):
-        return "main_page/answers.html"
 
 class RemoveCommentPublication(RemoveCommentsMixin, View):
     def post(self, request, *args, **kwargs):

@@ -17,11 +17,6 @@ urlpatterns = [
     path("publication/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),
     ########################## Comments Urls ############################
     path("remove-comments-p/<int:answer_id>/", views.RemoveCommentPublication.as_view(), name="remove_comment_p"),
-    path(
-        "post-comments-p/<int:pk>/<int:content_type_id>/",
-        views.PublicationCommentsHandlerView.as_view(),
-        name="post_comment_p",
-    ),
     ########################### AllAuth Urls ############################
     path("signup/", account_views.SignupView.as_view(), name="account_signup"),
     path("login/", account_views.LoginView.as_view(), name="account_login"),

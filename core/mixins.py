@@ -24,58 +24,6 @@ class RenderOrRedirect(ABC, TemplateView):
         return render(request, self.template_name)
 
 
-class CommentsHandlerMixin(ABC, View):
-
-    @abstractmethod
-    def get_model_class(self):
-        """
-        Must be implemented to return the model class (Thread or Publications).
-        """
-        pass
-
-    @abstractmethod
-    def get_template(self):
-        """
-        Must be implemented to return the model class (Thread or Publications).
-        """
-        pass
-
-    def get_context_data(self, request, **kwargs):
-        pk = self.kwargs.get("pk")
-        model_pk = self.kwargs.get("content_type_id")
-        get_data = data_handler(request, pk, self.get_template(), model_pk)
-        user_id = get_data["user_id"]
-        model_class = self.get_model_class()
-        instance = get_object_or_404(model_class, pk=pk)
-
-        context = {"user_id": user_id, "instance": instance, "model_class": model_class, "pk": pk, "model_pk": model_pk}
-        return context
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data(request, **kwargs)
-        instance = context["instance"]
-
-        if instance:
-            content = request.POST.get("feedback")
-            try:
-                user = CustomUser.objects.get(id=context["user_id"])
-                content_type = ContentType.objects.get_for_model(instance.__class__)
-                Comments.objects.create(
-                    user=user,
-                    title=instance.title,
-                    context=content,
-                    content_type=content_type,
-                    object_id=context.get("pk"),
-                )
-                return JsonResponse(data_handler(request, context["pk"], self.get_template(), context["model_pk"]))
-            except CustomUser.DoesNotExist:
-                return JsonResponse({"message": "User not found"}, status=404)
-            except Exception as e:
-                return JsonResponse({"message": str(e)}, status=500)
-
-        return JsonResponse({"message": "Invalid request"}, status=400)
-
-
 class RemoveCommentsMixin(ABC, View):
     def remove_comment(self, request, *args, **kwargs):
         answer_id = self.kwargs.get("answer_id")
@@ -124,8 +72,7 @@ class DetailMixin(ABC, DetailView):
         content_type = ContentType.objects.get_for_model(self.get_model_class())
         model_detail = get_object_or_404(self.get_model_class(), pk=pk)
         comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
-        model_pk = self.get_model_class().objects.filter(pk=pk).all()[0].id
-        get_context = data_handler(request, pk, self.get_comments_template(), model_pk)
+        get_context = data_handler(request, pk, self.get_comments_template(), content_type.id)
         get_context["model_detail"] = model_detail
         context = {
             "user": user,

@@ -8,13 +8,12 @@ from django.urls import reverse
 from app.models import Comments
 
 
-def data_handler(request, pk, template, model_pk):
-    comments = Comments.objects.filter(
-        object_id=pk, content_type__model=ContentType.objects.get_for_id(model_pk).model
-    ).all()
+def data_handler(request, pk, template, content_type_id):
+    model_class = ContentType.objects.get_for_id(content_type_id).model
+    comments = Comments.objects.filter(object_id=pk, content_type=ContentType.objects.get_for_id(content_type_id)).all()
     user = request.user
     user_id = user.id
-    model_class = ContentType.objects.get_for_id(model_pk).model
+
     feedback_html = render_to_string(
         template_name=template,
         context={"comments": comments, "csrf_token": get_token(request), "user": user, "model_class": model_class},

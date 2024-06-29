@@ -12,7 +12,7 @@ from users.models import CustomUser, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
 from core.helpers import post_request_details, data_handler
-from core.mixins import RemoveCommentsMixin, DetailMixin, CommentsHandlerMixin
+from core.mixins import RemoveCommentsMixin, DetailMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification, Comments
 from .models import Thread
 
@@ -48,7 +48,6 @@ class MainPageView(View):
                 for thread in Thread.objects.filter().all()
             ]
 
-            # print(publications_obj[0].get("link"))
             contents = publications_obj + threads_obj
             context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications, "contents": contents}
             return context
@@ -57,8 +56,19 @@ class MainPageView(View):
             return context
 
     def get(self, request, *args, **kwargs):
-
         context = self.get_context_data(request)
+        # for data in context["content"]:
+        #     if data["content_type"] :
+        #
+        # model_detail = get_object_or_404(self.get_model_class(), pk=pk)
+        # comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
+        # get_context = data_handler(request, pk, self.get_comments_template(), content_type.id)
+        # get_context["model_detail"] = model_detail
+        #
+        #
+        # context["comments"] = comments
+        # context["get_context"] = get_context
+
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -193,13 +203,55 @@ class ThreadDetailView(DetailMixin, DetailView):
         return "main_page/answers.html"
 
 
-class ThreadCommentsHandlerView(CommentsHandlerMixin, View):
+class CommentsHandler(View):
+    template = "main_page/answers.html"
 
-    def get_model_class(self):
-        return Thread
+    def get_context_data(self, request, **kwargs):
 
-    def get_template(self):
-        return "main_page/answers.html"
+        pk = self.kwargs.get("pk")
+        thread_content_type = ContentType.objects.get_for_id(self.kwargs.get("content_type_id"))
+        get_data = data_handler(request, pk, self.template, self.kwargs.get("content_type_id"))
+        user_id = get_data["user_id"]
+        model_class = Thread if thread_content_type.model == "thread" else Publication
+        instance = get_object_or_404(model_class, pk=pk)
+
+        context = {
+            "user_id": user_id,
+            "instance": instance,
+            "model_class": model_class,
+            "pk": pk,
+            "content_type_id": self.kwargs.get("content_type_id"),
+        }
+        return context
+
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        instance = context["instance"]
+
+        if instance:
+            content = request.POST.get("feedback")
+            if not content:
+                return JsonResponse({"message": "Feedback is required"}, status=400)
+
+            try:
+                user = CustomUser.objects.get(id=context["user_id"])
+                content_type = ContentType.objects.get_for_model(context["model_class"])
+                Comments.objects.create(
+                    user=user,
+                    title=instance.title,
+                    context=content,
+                    content_type=content_type,
+                    object_id=context.get("pk"),
+                )
+                return JsonResponse(
+                    data_handler(request, self.kwargs.get("pk"), self.template, context["content_type_id"])
+                )
+            except CustomUser.DoesNotExist:
+                return JsonResponse({"message": "User not found"}, status=404)
+            except Exception as e:
+                return JsonResponse({"message": str(e)}, status=500)
+
+        return JsonResponse({"message": "Invalid request"}, status=400)
 
 
 class RemoveCommentThread(RemoveCommentsMixin, View):

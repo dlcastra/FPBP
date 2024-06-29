@@ -40,7 +40,7 @@
 <form id="feedbackForm" action="/post-comments-p/{{ model_detail.id }}/{{ content_type.id }}/" method="POST">
     <div id="feedback-container">
         {% csrf_token %}
-        {% include 'publications/publication_detail/answers.html' %}
+        {% include 'main_page/answers.html' %}
     </div>
     <br>
 </form>

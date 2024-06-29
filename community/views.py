@@ -82,7 +82,7 @@ class CommunityView(ViewWitsContext):
             form = PublishForm(request.POST, request.FILES, initial={"author_id": context["author_id"]})
             if form.is_valid:
                 publication = form.save(commit=False)
-                publication.content_type = ContentType.objects.get_for_model(request.user)
+                publication.content_type = ContentType.objects.get_for_model(Community)
                 publication.save()
                 form.save()
                 community.posts.add(publication)

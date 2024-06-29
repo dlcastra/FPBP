@@ -171,7 +171,7 @@ class PublicationDetailView(DetailMixin, View):
         return f"/publication/{self.kwargs['pk']}"
 
     def get_comments_template(self):
-        return "publications/publication_detail/answers.html"
+        return "main_page/answers.html"
 
 
 # ------------------------ COMMENTS SECTION ------------------------
@@ -182,8 +182,7 @@ class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
         return Publication
 
     def get_template(self):
-        return "publications/publication_detail/answers.html"
-
+        return "main_page/answers.html"
 
 class RemoveCommentPublication(RemoveCommentsMixin, View):
     def post(self, request, *args, **kwargs):

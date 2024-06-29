@@ -1,5 +1,6 @@
 import json
 
+from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.shortcuts import redirect
@@ -10,9 +11,9 @@ from community.models import Community
 from users.models import CustomUser, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from core.helpers import post_request_details
-from core.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
-from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification
+from core.helpers import post_request_details, data_handler
+from core.mixins import RemoveCommentsMixin, DetailMixin, CommentsHandlerMixin
+from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification, Comments
 from .models import Thread
 
 
@@ -24,7 +25,32 @@ class MainPageView(View):
     def get_context_data(request):
         if request.user.is_authenticated:
             notifications = Notification.objects.filter(user=request.user).order_by("id")
-            context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications}
+
+            publications_obj = [
+                {
+                    "title": publication.title,
+                    "photo": publication.attached_file if publication.attached_file is not None else "",
+                    "link": f"/publication/{publication.id}/",
+                    "id": publication.id,
+                    "content_type": ContentType.objects.get_for_model(Publication),
+                }
+                for publication in Publication.objects.filter().all()
+            ]
+
+            threads_obj = [
+                {
+                    "title": thread.title,
+                    "photo": thread.image if thread.image is not None else "",
+                    "link": f"thread-detail/{thread.pk}",
+                    "id": thread.pk,
+                    "content_type": ContentType.objects.get_for_model(Thread),
+                }
+                for thread in Thread.objects.filter().all()
+            ]
+
+            # print(publications_obj[0].get("link"))
+            contents = publications_obj + threads_obj
+            context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications, "contents": contents}
             return context
         else:
             context = {"prog_lang": PROGRAMMING_LANGUAGES}
@@ -59,7 +85,7 @@ class SearchView(View):
             threads = Thread.objects.filter(title__icontains=search_query).all()
             communities = Community.objects.filter(name__icontains=search_query).all()
 
-            res_user = [{{"title"}: user.username, "link": f"/user-page/{user.username}/"} for user in users]
+            res_user = [{"title": user.username, "link": f"/user-page/{user.username}/"} for user in users]
             res_threads = [{"title": thread.title, "link": f"/thread-detail/{thread.id}"} for thread in threads]
             res_communities = [
                 {"title": community.name, "link": f"/community/name-{community.name}/"} for community in communities
@@ -164,7 +190,7 @@ class ThreadDetailView(DetailMixin, DetailView):
         return f"/thread-detail/{self.kwargs['pk']}"
 
     def get_comments_template(self):
-        return "threads/threads_detail/answers.html"
+        return "main_page/answers.html"
 
 
 class ThreadCommentsHandlerView(CommentsHandlerMixin, View):
@@ -173,7 +199,7 @@ class ThreadCommentsHandlerView(CommentsHandlerMixin, View):
         return Thread
 
     def get_template(self):
-        return "threads/threads_detail/answers.html"
+        return "main_page/answers.html"
 
 
 class RemoveCommentThread(RemoveCommentsMixin, View):

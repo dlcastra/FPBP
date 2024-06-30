@@ -77,6 +77,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
                 "content": comment.context,
                 "user_id": comment.user_id,
                 "object_id": comment.object_id,
+                "object_ct_id": f"{comment.object_id}" + comment.content_type_id,
             },
         }
         if comment.file:

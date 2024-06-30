@@ -25,34 +25,33 @@ class MainPageView(View):
     def get_context_data(request):
         if request.user.is_authenticated:
             notifications = Notification.objects.filter(user=request.user).order_by("id")
-
+            publication_content_type = ContentType.objects.get_for_model(Publication)
             publications_obj = [
                 {
                     "title": publication.title,
                     "photo": publication.attached_file if publication.attached_file is not None else "",
                     "link": f"/publication/{publication.id}/",
                     "id": publication.id,
-                    "content_type": ContentType.objects.get_for_model(Publication),
+                    "content_type": publication_content_type,
                     "comments": Comments.objects.filter(
-                        object_id=publication.id, content_type=ContentType.objects.get_for_model(Publication)
+                        object_id=publication.id, content_type=publication_content_type
                     ),
                 }
                 for publication in Publication.objects.filter().all()
             ]
-
+            thread_content_type = ContentType.objects.get_for_model(Thread)
             threads_obj = [
                 {
                     "title": thread.title,
                     "photo": thread.image if thread.image is not None else "",
                     "link": f"thread-detail/{thread.pk}",
                     "id": thread.id,
-                    "content_type": ContentType.objects.get_for_model(Thread),
-                    "comments": Comments.objects.filter(
-                        object_id=thread.id, content_type=ContentType.objects.get_for_model(Thread)
-                    ),
+                    "content_type": thread_content_type,
+                    "comments": Comments.objects.filter(object_id=thread.id, content_type=thread_content_type),
                 }
                 for thread in Thread.objects.filter().all()
             ]
+            print(threads_obj)
 
             contents = publications_obj + threads_obj
             context = {"prog_lang": PROGRAMMING_LANGUAGES, "notifications": notifications, "contents": contents}

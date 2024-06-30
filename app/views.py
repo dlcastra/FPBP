@@ -45,7 +45,7 @@ class MainPageView(View):
                     "title": thread.title,
                     "photo": thread.image if thread.image is not None else "",
                     "link": f"thread-detail/{thread.pk}",
-                    "id": thread.pk,
+                    "id": thread.id,
                     "content_type": ContentType.objects.get_for_model(Thread),
                     "comments": Comments.objects.filter(
                         object_id=thread.id, content_type=ContentType.objects.get_for_model(Thread)

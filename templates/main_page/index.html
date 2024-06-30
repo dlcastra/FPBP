@@ -87,46 +87,6 @@
             });
         });
 
-        $(document).ready(function () {
-            $('#feedbackForm').submit(function (event) {
-                event.preventDefault();
-                var formData = $(this).serializeArray();
-                formData.push({
-                    name: 'csrfmiddlewaretoken',
-                    value: '{{ csrf_token }}'
-                });
-
-                // Get hidden input data
-                var hiddenData = {
-                    id: $(this).find('input[type="hidden"]').data('id'),
-                    content_type: $(this).find('input[type="hidden"]').data('content_type')
-                };
-
-                // Add hidden input data to formData
-                formData.push({name: 'id', value: hiddenData.id});
-                formData.push({name: 'content_type', value: hiddenData.content_type});
-
-                // Convert formData to JSON
-                var jsonData = {};
-                $(formData).each(function (index, obj) {
-                    jsonData[obj.name] = obj.value;
-                });
-
-                $.ajax({
-                    type: 'POST',
-                    url: $(this).attr('action'),
-                    data: JSON.stringify(jsonData),
-                    contentType: 'application/json',
-                    success: function (response) {
-                        $('#feedback-container').html(response.feedback_html);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error(error);
-                    }
-                });
-            });
-        });
-
 
     </script>
     <style>
@@ -213,13 +173,7 @@
 
 {% for content in contents %}
     <label><img src="{{ content.photo }}" alt=""><br> <a href="{{ content.link }}">{{ content.title }}</a><br></label>
-    <form id="feedbackForm" action="/post-comments/{{ content.id }}/{{ content.content_type.id }}/" method="POST">
-        <input type="hidden" data-id="{{ content.id }}" data-content_type="{{ content.content_type }}">
-        <div id="feedback-container">
-            {% csrf_token %}
-            {% include "main_page/answers.html" %}
-        </div>
-    </form>
+    {% include 'main_page/answers.html' with comments=content.comments content_type_id=content.content_type.id object_id=content.id %}
 {% endfor %}
 
 

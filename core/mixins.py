@@ -79,8 +79,8 @@ class DetailMixin(ABC, DetailView):
             "model_class": model_class,
             "model_detail": model_detail,
             "comments": comments,
-            "get_context": get_context,
             "content_type": content_type,
+            "object_id": pk,
         }
 
         return context

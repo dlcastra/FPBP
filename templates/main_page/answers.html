@@ -1,89 +1,148 @@
-<style>
-    .scrollable-text {
-        margin-top: 10px;
-        margin-bottom: 10px;
-        margin-left: 10px;
-        margin-right: 10px;
-        max-height: 420px;
-        overflow-y: auto;
-        padding-right: 10px;
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Real-time Comments</title>
+    <style>
+        .scrollable-text {
+            margin: 10px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
 
+        .scrollable-text::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
 
-    .scrollable-text::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
+        .scrollable-text::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
 
-    .scrollable-text::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.5);
-        border-radius: 4px;
-    }
+        .scrollable-text::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
 
-    .scrollable-text::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(0, 0, 0, 0.7);
-    }
+        .scrollable-text::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
 
-    .scrollable-text::-webkit-scrollbar-track {
-        background-color: rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-    }
-
-    .scrollable-text::-webkit-scrollbar-thumb {
-        margin-right: 2px;
-    }
-</style>
-<script>
-    $(document).ready(function () {
-        $('#feedback-input').val('');
-        $('#feedback-container').on('click', '.remove-feedback-btn', function () {
-            var feedbackID = $(this).siblings('.feedback-text').data('feedback-id');
-            var feedbackContainer = $(this).closest('.feedback');
-            $.ajax({
-                type: 'POST',
-                url: '/remove-comments-t/' + feedbackID + '/',
-                data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
-                success: function (response) {
-                    feedbackContainer.remove();
-                },
-            });
-        });
-    });
-
-</script>
-
-{% if user.is_authenticated %}
-    <textarea name="feedback" id="feedback-input" placeholder=" Add feedback here(max. 255 characters)" maxlength="268"
-              style="width: 100%; max-width: 750px; height: 100px; max-height: 150px ;vertical-align: top; resize: none; border-radius: 15px;"
-              required></textarea><br>
-    <br>
-    <input class="btn btn-success" type="submit" value="Submit">
-    <br>
-    <br>
-
+        .scrollable-text::-webkit-scrollbar-thumb {
+            margin-right: 2px;
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body>
+{% if request.user.is_authenticated %}
+    <form id="commentForm">
+        <input type="text" id="title" placeholder="Title" required><br><br>
+        <textarea id="content" placeholder=" Add feedback here (max. 255 characters)" maxlength="255"
+                  style="width: 100%; max-width: 750px; height: 100px; max-height: 150px; vertical-align: top; resize: none; border-radius: 15px;"
+                  required></textarea><br>
+        <input type="hidden" id="user_id" value="{{ request.user.id }}">
+        <input type="hidden" id="content_type_id" value="{{ content_type_id }}"><br>
+        <input type="hidden" id="object_id" value="{{ object_id }}"><br>
+        <input type="file" id="file" accept=".txt,.pdf,.docx">
+        <input type="file" id="image" accept="image/*"><br>
+        <button class="btn btn-success" type="submit">Send Comment</button>
+    </form>
 {% else %}
-    <p>You must be a client of this lawyer to provide feedback.</p>
+    <p>You need to be logged in to send a comment.</p>
 {% endif %}
-
-<div class="scrollable-text" id="feedback-container" style="overflow-y: scroll; height: 300px;">
+<div class="scrollable-text" id="comments" style="overflow-y: scroll; height: 300px;">
     {% if comments %}
         {% for content in comments %}
-            <div class="feedback">
-                <h5>User: {{ content.user.username }} | Article:{{ content.content_type.title }}</h5>
-                <span class="feedback-text" style="" data-feedback-id="{{ content.id }}">{{ content.context }}</span>
-                {% if user.id == content.user.id %}
-                    <button
-                            class="btn remove-feedback-btn"
-                            style="width: 100%; max-width: 75px; height: 30px; font-size: 12px; margin-top: 5px"
-                            type="button">Remove
-
-                    </button>
-                {% endif %}
-                <br>
-                <br>
+            <div class="feedback" data-feedback-id="{{ content.id }}">
+                <h5>User: {{ content.user.username }} | Article: {{ content.title }}</h5>
+                <span class="feedback-text">{{ content.context }}</span>
+                <br><br>
             </div>
         {% endfor %}
     {% else %}
         There are no feedbacks yet.<br>
     {% endif %}
 </div>
+
+<script>
+    $(document).ready(function () {
+        const groupName = "comments";
+        const socket = new WebSocket(`ws://${window.location.host}/ws/${groupName}/`);
+
+        socket.onopen = function () {
+            console.log("WebSocket connection established.");
+        };
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            const comment = data.comment;
+            displayComment(comment);
+        };
+
+        socket.onclose = function () {
+            console.log("WebSocket connection closed.");
+        };
+
+        const form = document.getElementById("commentForm");
+        form.onsubmit = async function (event) {
+            event.preventDefault();
+
+            const title = document.getElementById("title").value;
+            const userId = document.getElementById("user_id").value;
+            const content = document.getElementById("content").value;
+            const contentTypeId = document.getElementById("content_type_id").value;
+            const object_id = document.getElementById("object_id").value;
+            const fileInput = document.getElementById("file");
+            const imageInput = document.getElementById("image");
+
+            const message = {
+                title: title,
+                user_id: userId,
+                content: content,
+                content_type_id: contentTypeId,
+                object_id: object_id,
+                file: fileInput.files[0] ? await fileToBase64(fileInput.files[0]) : null,
+                image: imageInput.files[0] ? await fileToBase64(imageInput.files[0]) : null,
+            };
+
+            socket.send(JSON.stringify(message));
+            form.reset();
+        };
+
+        async function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        function displayComment(comment) {
+            const commentsDiv = document.getElementById("comments");
+
+            // Construct the HTML structure for the comment
+            const commentElement = document.createElement("div");
+            commentElement.classList.add("feedback");
+
+            // Insert the username into the JavaScript variable
+            const username = "{{ request.user.username }}";
+
+            // Construct the HTML structure for the comment
+            commentElement.innerHTML = `
+                <h5>User: ${username} | Article: ${comment.title}</h5>
+                <span class="feedback-text">${comment.content}</span>
+                <br><br>
+            `;
+
+            commentsDiv.appendChild(commentElement);
+            commentsDiv.scrollTop = commentsDiv.scrollHeight;
+        }
+    });
+</script>
+
+</body>
+</html>

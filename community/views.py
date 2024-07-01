@@ -203,7 +203,7 @@ class AdminPanelView(ViewWitsContext):
 
     """
     What needs to be added:
-        1. Possibility of banning users
+        1. Possibility of banning users: Done
         2. Granting privileges (admin or moderator)
         3. Removal of privileges
         4. View recent activity
@@ -258,6 +258,18 @@ class AdminPanelView(ViewWitsContext):
 
     @method_decorator(owner_required)
     def get(self, request, *args, **kwargs):
+        """
+        Pointing method to other views or actions
+
+        :param request: HTTP request object that can include '?followers_list' or '?edit' in the query parameters.
+        :param args: Additional positional arguments.
+        :param kwargs: Expects 'name' as a string taken from the URL.
+
+        :return: Redirect to other views or render view template
+            - If param request is 'edit': render edit_template
+            - If param request is 'followers_list': redirect to the BlackListView view where all users will be displayed
+            - For other ways: render view base template
+        """
         context = self.get_context_data(request, **kwargs)
 
         if "edit" in request.GET:
@@ -268,74 +280,66 @@ class AdminPanelView(ViewWitsContext):
         if "followers_list" in request.GET:
             return redirect("blacklist/")
 
-        # if "blacklist" in request.GET:
-        #     return redirect('blacklist/')
-
         return render(request, self.template_name, context)
 
     @method_decorator(owner_required)
     def post(self, request, *args, **kwargs):
+        """
+        Pointing method to other views or actions
+
+        :param request: HTTP request object that can include '?put_ban' or '?remove_ban' in the query parameters.
+        And 'XMLHttpRequest' in request headers.
+        :param args: Additional positional arguments.
+        :param kwargs: Expects 'name' as a string taken from the URL.
+
+        :return: Redirect to other views or render:
+            - If request without any params: redirect to self
+
+            - If param request is 'put_ban' and request headers is 'XMLHttpRequest':
+            redirect to BlackListView with param 'put_ban'
+
+            - If param request is 'remove_ban': redirect to BlackListView with param 'remove_ban'
+        """
         context = self.get_context_data(request, **kwargs)
 
         # CONTEXT VARIABLES
         form = CreateCommunityForm(request.POST, instance=context["instance"])
         edit_template = "community/create_community.html"
-        redirect_url = f"/community/name-{self.kwargs['name']}/admin-panel/"
+        redirect_url = request.path_info
         redirect_response = base_post_method(form, redirect_url)
 
-        if redirect_response:
+        if redirect_response:  # To edit community data
             return redirect_response
 
-        if (
-            request.headers.get("X-Requested-With") == "XMLHttpRequest"
-            and json.loads(request.body)["action"] == "put_ban"
-        ):
-            community_name = self.kwargs["name"]
-            return redirect("blacklist", name=community_name)
+        request_headers = request.headers.get("X-Requested-With")
+        request_action = json.loads(request.body)["action"]
+        if request_headers == "XMLHttpRequest" and request_action == "put_ban":  # To ban a user
+            return redirect("blacklist", name=self.kwargs["name"])
 
-        if "remove_ban" in request.POST:
-            community_name = self.kwargs["name"]
-            return redirect("blacklist", name=community_name)
+        if "remove_ban" in request.POST:  # To unban a user
+            return redirect("blacklist", name=self.kwargs["name"])
 
         return render(request, edit_template, {"form": form})
 
-    """ -------- LIST FUNCTIONS: Return lists of objects -------- """
-
-    def get_followers(self, request, **kwargs):
-        # CONTEXT VARIABLES
-        community = get_object_or_404(Community, name=self.kwargs["name"])
-        followers = CommunityFollowers.objects.filter(community=community, is_follow=True).all()
-        users_list_template = "community/community_detail/admin_panel/users_list.html"
-        context_data = {"followers": followers, "instance": self.get_context_data(request)["instance"]}
-
-        return render(request, users_list_template, context_data)
-
-    def get_banned_users(self, request, **kwargs):
-        # CONTEXT VARIABLES
-
-        context = self.get_context_data(request, **kwargs)
-        template = "community/community_detail/admin_panel/black_list.html"
-
-        black_list_context = {
-            "banned_users": context["banned_users"],
-            "followers": context["followers_list"],
-            "instance": self.get_context_data(request)["instance"],
-        }
-
-        return render(request, template, black_list_context)
-
-    """ -------- MAIN LOGIC FUNCTIONS: Change the values and position of objects in tables -------- """
-
 
 class BlackListView(ViewWitsContext):
+    """
+    View to ban users in community
+    """
+
     class_form = BlackListForm
     template_name = "community/community_detail/admin_panel/users_list.html"
 
     def get_context_data(self, request, **kwargs):
         context = super().get_context_data(request)
-        context["black_list"] = BlackList.objects.filter(community__name=kwargs.get("name")).select_related(
-            "user__user"
-        )
+        # Special variables
+        community = get_object_or_404(Community, name=self.kwargs["name"])
+        followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
+        banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
+        black_list_filtered = BlackList.objects.filter(community__name=kwargs.get("name"))
+
+        # Context variables
+        context["black_list"] = black_list_filtered.select_related("user__user")
         banned_users = [
             {
                 "id": entry.user.id,
@@ -345,11 +349,7 @@ class BlackListView(ViewWitsContext):
             }
             for entry in context["black_list"]
         ]
-        community = get_object_or_404(Community, name=self.kwargs["name"])
-        followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
-
         context["banned_users"] = banned_users
-        banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
         context["followers"] = []
         for follower in followers:
             if follower.user.id not in banned_user_list:
@@ -357,9 +357,23 @@ class BlackListView(ViewWitsContext):
             elif not banned_user_list:
                 context["followers"] = followers
         context["community"] = community
+
         return context
 
     def get(self, request, *args, **kwargs):
+        """
+        Return data about banned users in a community.
+
+        :param request: None
+        :param args: Additional positional arguments.
+        :param kwargs: Expects 'name' as a string taken from the URL.
+
+        :return: Rendered HTTP response with the following context:
+            - banned_users (list): List of banned users.
+            - instance (Community): Instance of the Community.
+            - followers (list): List of followers.
+            - csrf_token (str): CSRF token for the request.
+        """
         context = self.get_context_data(request, **kwargs)
         return render(
             request,
@@ -374,6 +388,15 @@ class BlackListView(ViewWitsContext):
 
     @method_decorator(owner_required)
     def post(self, request, *args, **kwargs):
+        """
+        Redirects data in functions depending on the selected action to pages
+
+        :param request: To ban user '?put_ban', to remove user from black list '?remove_ban'
+        :param args: Additional positional arguments.
+        :param kwargs: Expects 'user_id' as int taken from the query parameters.
+
+        :return:  Return JsonResponse in case of bad request.
+        """
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             data = json.loads(request.body)
             print(data)
@@ -385,12 +408,37 @@ class BlackListView(ViewWitsContext):
 
         return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
-    def ban_user(self, request, data):
-        try:
-            follower_id = data.get("follower_id")
-            reason = data.get("reason")
-            instance_name = data.get("instance")
+    @staticmethod
+    def ban_user(request, data: json):
+        """
+        Places the user in the community_blacklist table.
+        If the user is already in the blacklist, the reason is updated.
 
+        :param request: None
+        :param data: JSON object containing the necessary data:
+            - follower_id (int): ID of the follower to be banned.
+            - reason (str): Reason for banning the user.
+            - instance (str): Name of the community.
+
+        :return: JsonResponse indicating the success or failure of the operation:
+            - If the user is successfully banned or upgraded:
+            {"status": "success"}
+
+            - If one of the required components has been lost or not specified:
+            {"status": "error", "message": "Missing follower_id, reason, or instance name"} and status code 400
+
+            - If JSON was invalid:
+            {"status": "error", "message": "Invalid JSON"} and status code 400
+
+            - In case of other errors:
+            {"status": "error", "message": Exception error body} and status code 400
+        """
+        try:
+            follower_id: int = data.get("follower_id")
+            reason: str = data.get("reason")
+            instance_name: str = data.get("instance")
+
+            # Check data from JSON response
             if follower_id and reason and instance_name:
                 community = get_object_or_404(Community, name=instance_name)
                 blacklist, created = BlackList.objects.get_or_create(
@@ -410,9 +458,24 @@ class BlackListView(ViewWitsContext):
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
-    def delete_user_from_blacklist(self, request, data):
+    @staticmethod
+    def delete_user_from_blacklist(request, data: json):
+        """
+        Delete the user from the community_blacklist table.
+
+        :param request: None
+        :param data: Data from JSON response:
+            - user_id (int): The id of the user from community_blacklist table.
+
+        :return: JsonResponse indicating the success or failure of the operation:
+            - If the user is successfully deleted:
+            {"status": "success"}
+
+            - In other cases:
+            {"status": "error", "message": Exception error body} and status code 400
+        """
         try:
-            banned_user_id = data.get("bannedUserId")
+            banned_user_id: int = data.get("bannedUserId")
             print(f"CSRF Token: {request.headers.get('X-CSRFToken')}")
             print(f"Banned User ID: {banned_user_id}")
 

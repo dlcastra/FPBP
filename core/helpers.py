@@ -1,18 +1,19 @@
+from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.template.loader import render_to_string
+from django.urls import reverse
 
-from .models import Comments
+from app.models import Comments
 
 
-def data_handler(request, pk, template, model_pk):
-    comments = Comments.objects.filter(
-        object_id=pk, content_type__model=ContentType.objects.get_for_id(model_pk).model
-    ).all()
+def data_handler(request, pk, template, content_type_id):
+    model_class = ContentType.objects.get_for_id(content_type_id).model
+    comments = Comments.objects.filter(object_id=pk, content_type=ContentType.objects.get_for_id(content_type_id)).all()
     user = request.user
     user_id = user.id
-    model_class = ContentType.objects.get_for_id(model_pk).model
+
     feedback_html = render_to_string(
         template_name=template,
         context={"comments": comments, "csrf_token": get_token(request), "user": user, "model_class": model_class},
@@ -39,3 +40,23 @@ def post_request_details(request, form_with_files, redirect_url):
         form.save()
 
         return HttpResponseRedirect(redirect_url)
+
+
+def base_post_method(model_form, redirect_url):
+    if model_form.is_valid():
+        instance = model_form.save(commit=False)
+        instance.save()
+        model_form.save()
+        return HttpResponseRedirect(redirect_url)
+
+
+def form_check_len(context: str, min_len: int, max_len: int, min_error: str, max_error: str):
+    if len(context) == 0:
+        raise forms.ValidationError("Context cannot be empty")
+
+    if len(context) < min_len:
+        raise forms.ValidationError(f"{min_error}, minimum length is {min_len}")
+    elif len(context) > max_len:
+        raise forms.ValidationError(f"{max_error}, maximum length is {max_len}")
+
+    return context

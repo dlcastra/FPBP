@@ -9,17 +9,14 @@ urlpatterns = [
     ############################# User Urls #############################
     path("make-friends/", views.AllUsers.as_view(), name="make-friends"),
     path("user-page/<username>/", views.UserPageView.as_view(), name="user_page"),
+    path("user-page/<username>/followers/", views.FollowersListView.as_view(), name="user_followers"),
+    path("user-page/<username>/followings/", views.FollowingsListView.as_view(), name="user_followings"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
     path("publication/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),
     ########################## Comments Urls ############################
     path("remove-comments-p/<int:answer_id>/", views.RemoveCommentPublication.as_view(), name="remove_comment_p"),
-    path(
-        "post-comments-p/<int:pk>/<int:content_type_id>/",
-        views.PublicationCommentsHandlerView.as_view(),
-        name="post_comment_p",
-    ),
     ########################### AllAuth Urls ############################
     path("signup/", account_views.SignupView.as_view(), name="account_signup"),
     path("login/", account_views.LoginView.as_view(), name="account_login"),

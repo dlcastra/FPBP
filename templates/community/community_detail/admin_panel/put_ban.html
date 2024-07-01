@@ -5,10 +5,11 @@
     <title>Title</title>
 </head>
 <body>
+BAN PAGE
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="submit" value="Edit" data-action="edit">
+    <input type="submit" name="put_ban" value="Accept">
 </form>
 </body>
 </html>

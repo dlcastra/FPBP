@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+{% include "main_page/search_bar.html" %}
+{% if results %}
+    {% for result in results %}
+        <a href="{{ result.link }}">{{ result.title }}</a><br>
+    {% endfor %}
+{% else %}
+    Nothing was found
+{% endif %}
+</body>
+</html>

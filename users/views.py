@@ -21,6 +21,15 @@ class CustomUserChangeView(LoginRequiredMixin, View):
     success_url = "/change-data/"
 
     def get(self, request):
+        """
+        Displays a page for editing user data
+
+        :param request: GET request
+        :return: Render template with dictionary context data:
+            - form (form_class): CustomUserChangeForm instance
+            - connections (list): List of user connection social accounts
+            - connected_provider_ids (list[int]): List of provider ids
+        """
         form = self.form_class(instance=request.user)
         connections = SocialAccount.objects.filter(user_id=request.user.id)
         connected_provider_ids = connections.values_list("provider", flat=True)
@@ -84,6 +93,14 @@ class UserPageView(LoginRequiredMixin, View):
     template_name = "account/user_page.html"
 
     def get_context_data(self, request, **kwargs):
+        """
+        :return: Dictionary context data:
+            - user (instance)
+            - followers_count (int)
+            - followings_count (int)
+            - publication (list): List of user publications
+            - is_following (list): List of user followings
+        """
         username = self.kwargs.get("username")
         user = CustomUser.objects.get(username=username)
         user.followers_count = Followers.objects.filter(user=user, is_follow=True).count()
@@ -106,6 +123,17 @@ class UserPageView(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Responsible for handling the user subscription system
+
+        :param request: HTTP request object that can include 'XMLHttpRequest' from headers
+        :param args: Additional arguments
+        :param kwargs: Get 'username' from URL path
+
+        :return: JsonResponse or Render template with context:
+            - If following end with success: Return JsonResponse with followers_count (int) and is_following (bool)
+            - For else: Render template with context
+        """
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             username = self.kwargs.get("username")
             user = CustomUser.objects.get(username=username)

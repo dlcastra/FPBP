@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 
 from core.helpers import data_handler, post_request_details
 from app.models import Comments
-from users.models import CustomUser
 
 
 class RenderOrRedirect(ABC, TemplateView):
@@ -26,6 +25,16 @@ class RenderOrRedirect(ABC, TemplateView):
 
 class RemoveCommentsMixin(ABC, View):
     def remove_comment(self, request, *args, **kwargs):
+        """
+        Remove comments from publication
+
+        :param request: POST request
+        :param args: Additional arguments.
+        :param kwargs: Get answer_id (int) from URL path
+        :return: HTTP or JSON response
+            - If answer deleted with success: HTTP response status code is 204
+            - If answer does not exist: JSON response {"error": "Comments does not exist"} and status code is 404
+        """
         answer_id = self.kwargs.get("answer_id")
         try:
             answer = Comments.objects.get(id=answer_id)
@@ -66,6 +75,17 @@ class DetailMixin(ABC, DetailView):
         pass
 
     def get_context_data(self, request, **kwargs):
+        """
+        :param request: GET and POST requests
+        :param kwargs: get object 'pk' from URL
+        :return: Dictionary context data for rendering object detail
+            - user (str): Return username
+            - model_class (list): Return model class by 'pk'
+            - model_detail (dict): Return model data by 'pk'
+            - comments (list): Returns comments that belong to the object, filtering them by 'pk' and 'content_type'
+            - content_type (str): Determines which model this comments belongs
+            - object_id (int): Return object id taken from URL as 'pk'
+        """
         user = request.user
         pk = self.kwargs.get("pk")
         model_class = self.get_model_class().objects.filter(pk=pk).all()
@@ -86,10 +106,22 @@ class DetailMixin(ABC, DetailView):
         return context
 
     def get_object(self, queryset=None):
+        # Return object instance
         pk = self.kwargs.get("pk")
         return get_object_or_404(self.get_model_class(), pk=pk)
 
     def get(self, request, *args, **kwargs):
+        """
+        Displays the main template or template for the object being edited.
+        Verifies that the user is authenticated and that the user is the author of the publication.
+
+        :param request: HTTP request object that can include '?edit' parameter or None
+        :param args: Additional arguments.
+        :param kwargs: Taken object 'pk' from URL for 'model_detail'
+        :return: Render template with context data
+            - If request param is 'edit' and user is valid: Render edit template with dictionary context data
+            - If request param is None: Render main template with object details
+        """
         context = self.get_context_data(request, **kwargs)
         template = self.render_main_template()
         user_checker = request.user.is_authenticated and request.user.id == context["model_detail"].author_id
@@ -103,6 +135,18 @@ class DetailMixin(ABC, DetailView):
         return render(request, template, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Places the data into a function that checks the validity of the data then:
+            - If the data is valid, the user is transferred to the given URL
+            - For else cases must be displayed error message
+
+        :param request: POST request with object data
+        :param args: Additional arguments
+        :param kwargs: Additional position arguments.
+        :return: Redirect to the given URL or render template with context data:
+            - If form is valid: Redirect to the given
+            - If form is invalid: Return error message
+        """
         form_class = self.get_form_class()
         form = form_class(request.POST, request.FILES, instance=self.get_object())
         redirect_response = post_request_details(request, form, self.get_redirect_url())

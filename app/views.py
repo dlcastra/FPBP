@@ -23,6 +23,19 @@ class MainPageView(View):
 
     @staticmethod
     def get_context_data(request):
+        """
+        :return: Dictionary context:
+            - notifications (list): List of all user notifications if user is authenticated
+            - contents (list[dict]): Content from Publications and Threads if user is authenticated
+                - title (str): Title of the publication
+                - photo (str): Return path ot photo if file exists, else return empty string
+                - link (str): Return URL path to publication
+                - id (int): Publication ID
+                - content_type (str): Determines which model this publication belongs
+                to in order to filter out commenters
+                - comments (list[Comments]):  Returns all comments that belong to the object
+            - prog_lang (str): Path to page with tutorials
+        """
         if request.user.is_authenticated:
             notifications = Notification.objects.filter(user=request.user).order_by("id")
             publication_content_type = ContentType.objects.get_for_model(Publication)
@@ -66,7 +79,17 @@ class MainPageView(View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Responsible for changing the status of notifications
 
+        :param request: HTTP request from which XMLHttpRequest will be taken
+        :param args: Additional arguments.
+        :param kwargs: Additional position arguments.
+        :return: HttpResponse if in headers will be XMLHttpRequest
+            - If 'mark_read' in request body: {"status": "ok"}
+            - If 'mark_read_all' in request body: {"status": "ok"}
+            - For else cases: {"status": "error"}, response status code: 400
+        """
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             data = json.loads(request.body)
 
@@ -83,6 +106,19 @@ class MainPageView(View):
 
 class SearchView(View):
     def get(self, request, *args, **kwargs):
+        """
+        Searches all available objects from the database: CustomUser, Thread, Community
+
+        :param request: HTTP request get name of object and passes it to the search query
+        :param args: Additional arguments.
+        :param kwargs: Additional position arguments.
+        :return: Render template with context:
+            - If search query in request: results (list[dict[list[str]]]):
+            - res_user (list[str]): Return titles whose containing user's username
+            - res_threads (list[str]): Return titles whose containing thread's title
+            - res_communities (list[str]): Return titles whose containing community's name
+            - For else cases: Only render template
+        """
         search_query = request.GET.get("search", "")
         if search_query:
             users = CustomUser.objects.filter(username__icontains=search_query).all()
@@ -102,6 +138,18 @@ class SearchView(View):
 
 class AutocompleteSearchView(DetailView):
     def get(self, request, *args, **kwargs):
+        """
+        The method receives a search request from GET-request parameters, searches user databases,
+        threads and communities databases, collects the results and returns them in JSON format.
+
+        :param request: GET request
+        :param args: Additional arguments.
+        :param kwargs: Additional position arguments.
+        :return: JSON response
+            - suggestions (list[dict[str, str]]):
+            - label (str): Username | Thread title | Community name
+            - url (str): URL path to object
+        """
         query = request.GET.get("term", "")
         users = CustomUser.objects.filter(username__icontains=query)
         threads = Thread.objects.filter(title__icontains=query)
@@ -122,11 +170,24 @@ class AutocompleteSearchView(DetailView):
         return JsonResponse(suggestions, safe=False)
 
 
-# ------------------------ THREADS VIEWS ------------------------
 class TutorialPageView(View):
     template_name = "tutorials/index.html"
 
-    def get(self, request, slug, page_id, *args, **kwargs):
+    def get(self, request, slug: str, page_id: int, *args, **kwargs):
+        """
+        Displays the content of the tutorial page depending on the specified slug and page id
+
+        :param request: GET request
+        :param slug: Taken from URL
+        :param page_id: Taken from URL
+        :param args: Additional arguments.
+        :param kwargs: Additional position arguments.
+
+        :return: Render template with dictionary context:
+            - language (instance)
+            - page (dict): Return page content
+            - subsections (dict): Return subsection content
+        """
         language = get_object_or_404(ProgrammingLanguage, slug=slug)
         page = get_object_or_404(TutorialPage, language=language, id=page_id)
         subsections = SubSection.objects.filter(page=page)
@@ -138,11 +199,17 @@ class TutorialPageView(View):
         return render(request, self.template_name, context)
 
 
+# ------------------------ THREADS VIEWS ------------------------
 class ThreadsPageView(View):
     template_name = "threads/all_threads/threads_page.html"
 
     @staticmethod
     def get_context_data(request):
+        """
+        :return: Dictionary context
+            - threads (list): List of all threads
+            - search_query (list): List of filtered threads by name
+        """
         search_query = request.GET.get("search", "")
         if search_query:
             threads = Thread.objects.filter(title__contains=search_query).order_by("id")
@@ -152,6 +219,15 @@ class ThreadsPageView(View):
         return context
 
     def get(self, request, *args, **kwargs):
+        """
+        Display all threads and search bar on the page
+
+        :param request: HTTP request object that can include '?create' parameter or None
+        :return: Redirect or render template with dictionary context:
+            - If request param is 'create' then: redirect to 'new_tread'
+            - If request param is None then: render template with context:
+            - threads (list): List of all threads
+        """
         context = self.get_context_data(request)
         if "create" in request.GET:
             return redirect("new_thread")

@@ -21,10 +21,48 @@ from users.forms import PublishForm
 from users.models import Moderators, Publication
 
 
+class CreateCommunityView(View):
+    template_name = "community/create_community.html"
+    form_class = CreateCommunityForm
+
+    def get(self, request, *args, **kwargs):
+        form = self.form_class()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            community = form.save(commit=True)
+            moderator = Moderators.objects.create(user=request.user, is_owner=True)
+            community.admins.add(moderator)
+            return redirect(f"/community/name-{form.cleaned_data['name']}/")
+
+        else:
+            return render(request, self.template_name, {"form": form})
+
+
+class CommunityListView(ListView):
+    model = Community
+    template_name = "community/community_list.html"
+
+
 class CommunityView(ViewWitsContext):
+    """
+    A view handler for displaying and interacting with the main community page.
+    """
+
     template_name = "community/community_detail/community_main_page.html"
 
     def get_context_data(self, request, **kwargs):
+        """
+        :return: Dictionary context:
+            - publication_form (form): Publication form with initial author
+            - name (str): Community name taken from URL
+            - community_data (model instance): Community instance
+            - community_followers (list): List of subscribed followers
+            - is_follow_user (bool): True if user is followed by community, False otherwise
+            - author_id (int): Publication author's ID
+        """
         context = super().get_context_data(request, **kwargs)
         name = self.kwargs.get("name")
         community_data = Community.objects.get(name=name)
@@ -55,22 +93,55 @@ class CommunityView(ViewWitsContext):
         return context
 
     def get(self, request, *args, **kwargs):
+        """
+        Handles GET requests, renders the community page with the appropriate context.
+
+        :param request: None
+        :param args: Additional arguments.
+        :param kwargs: Expects user id from request
+
+        :return: Render template with community context:
+            - follow_value (str): Returns Unfollow if the user has already subscribed, otherwise returns Follow
+        :used context from get_context_data:
+            - is_follow_user (int): request user id
+        """
         context = self.get_context_data(request, **kwargs)
         context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Handles subscribing and unsubscribing from the community, sending subscription requests,
+        and creating community publications.
+
+        :param request: HTTP request object that can include '?new_post'
+        or 'follow', 'unfollow', 'send_request' and 'remove_request' from actions
+
+        :param args: Additional arguments.
+        :param kwargs: Expects 'name' as a string taken from the URL.
+
+        :return: JsonResponse, redirect to another class method or redirect to community home page:
+            - If action is 'follow' or 'unfollow': redirect to handle_send_request_action
+            - If action is 'send_request' or 'remove_request' end with success: {"success": true}
+            - If action is 'send_request' or 'remove_request' end without success: redirect to handle_send_request_action
+            - If param is 'new_post' and form is valid: redirect to community home page
+            - If param is 'new_post' and form is not valid: {"message": "Something went wrong"}
+            - For other ways: redirect to community home page
+        :used context from get_context_data:
+            - community_data (model instance): Community name
+            - author_id (int): Request user id if user is community owner
+        """
+        # CONTEXT VARIABLES
         context = self.get_context_data(request, **kwargs)
-        community = context["community_data"]
+        community_data = context["community_data"]
         action = self.request.POST.get("action")
+        user = self.request.user.id
 
         # FOLLOW REQUESTS
         if action == "follow" or action == "unfollow":
             return self.handle_follow_action(context)
         elif action == "send_request" or action == "remove_request":
-            request_obj = CommunityFollowRequests.objects.filter(
-                community=context["community_data"], user=self.request.user.id, send_status=True
-            )
+            request_obj = CommunityFollowRequests.objects.filter(community=community_data, user=user, send_status=True)
             if request_obj.exists():
                 request_obj.delete()
                 return JsonResponse({"success": True})
@@ -85,7 +156,7 @@ class CommunityView(ViewWitsContext):
                 publication.content_type = ContentType.objects.get_for_model(Community)
                 publication.save()
                 form.save()
-                community.posts.add(publication)
+                community_data.posts.add(publication)
 
                 return redirect(f"/community/name-{context.get('name')}/")
 
@@ -94,7 +165,17 @@ class CommunityView(ViewWitsContext):
 
         return redirect(f"/community/name-{context.get('name')}/")
 
-    def handle_follow_action(self, context):
+    def handle_follow_action(self, context: dict) -> JsonResponse:
+        """
+        This function changes the user's subscription status to the community.
+        If a user is already subscribed, the function unsubscribes him/her, and vice versa.
+        After changing the status, function returns the number of subscribers and the current subscription status.
+
+        :param context: A dictionary with context data containing information about the community.
+        :return: Json response with context:
+            - followers_count (int): Number of community followers
+            - is_following (bool): True if user is subscribed, otherwise False
+        """
         community = context.get("community_data")
         follower_obj, created = CommunityFollowers.objects.get_or_create(user=self.request.user, community=community)
         follower_obj.is_follow = not follower_obj.is_follow
@@ -107,7 +188,15 @@ class CommunityView(ViewWitsContext):
             }
         )
 
-    def handle_send_request_action(self, context):
+    def handle_send_request_action(self, context: dict) -> JsonResponse:
+        """
+        This function is responsible for sending subscription requests to the community.
+        When a user sends a request, a notification is sent to the community administrators.
+
+        :param context: A dictionary with context data containing information about the community.
+        :return: Json response with context:
+            - request_status (bool): Try if was sent successfully
+        """
         community = context.get("community_data")
         request_obj, created = CommunityFollowRequests.objects.get_or_create(
             user=self.request.user, community=community
@@ -131,39 +220,13 @@ class CommunityView(ViewWitsContext):
         )
 
 
-class CreateCommunityView(View):
-    template_name = "community/create_community.html"
-    form_class = CreateCommunityForm
-
-    def get(self, request, *args, **kwargs):
-        form = self.form_class()
-        return render(request, self.template_name, {"form": form})
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            community = form.save(commit=True)
-            moderator = Moderators.objects.create(user=request.user, is_owner=True)
-            community.admins.add(moderator)
-            return redirect(f"/community/name-{form.cleaned_data['name']}/")
-
-        else:
-            return render(request, self.template_name, {"form": form})
-
-
-class CommunityListView(ListView):
-    model = Community
-    template_name = "community/community_list.html"
-
-
 class CommunityFollowersListView(ListView):
     model = CommunityFollowers
     template_name = "community/community_detail/community_followers/community_followers.html"
 
     def get_queryset(self):
-        followers = CommunityFollowers.objects.filter(
-            community=get_object_or_404(Community, name=self.kwargs["name"]), is_follow=True
-        ).all()
+        community = get_object_or_404(Community, name=self.kwargs["name"])
+        followers = CommunityFollowers.objects.filter(community=community, is_follow=True).all()
         return followers
 
 
@@ -171,6 +234,10 @@ class FollowersRequestListView(View):
     template_name = "community/community_detail/community_followers/follow_requests.html"
 
     def get_context_data(self, **kwargs):
+        """
+        :param kwargs: Community name taken from URL
+        :return: Dictionary with list users whose subscription requests were not accepted
+        """
         community = get_object_or_404(Community, name=self.kwargs["name"])
         followers = CommunityFollowRequests.objects.filter(community=community, accepted=False, send_status=True).all()
         return {"communityfollowers_list": followers}
@@ -179,6 +246,21 @@ class FollowersRequestListView(View):
         return render(request, self.template_name, self.get_context_data())
 
     def post(self, request, *args, **kwargs):
+        """
+        Processes POST requests to accept or reject community subscription requests.
+        If the request is an AJAX request, the function performs the following actions depending
+        on the value of the "action" parameter in the POST request:
+            - "accept": Accepts the subscription request and adds the user to the community subscriber list.
+            - "reject": Rejects the subscription request.
+
+        :param request:
+        :param args: Additional arguments.
+        :param kwargs: Community name taken from URL
+
+        :return: Json response confirming successful completion of the action.
+            - (dict): {"success": "ok"}
+        """
+
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             community = get_object_or_404(Community, name=self.kwargs["name"])
             user_id = request.POST.get("user")
@@ -199,20 +281,33 @@ class FollowersRequestListView(View):
 
 
 class AdminPanelView(ViewWitsContext):
+    """
+    View to administrate community data and community users
+    """
+
     template_name = "community/community_detail/admin_panel/adminpanel.html"
 
     """
     What needs to be added:
-        1. Possibility of banning users: Done
-        2. Granting privileges (admin or moderator)
-        3. Removal of privileges
-        4. View recent activity
-        5. Possibility to delete/hide posts
-        
-        and more
+        1. Granting privileges (admin or moderator)
+        2. Removal of privileges
+        3. View recent activity
+        4. Possibility to delete/hide posts
     """
 
     def get_context_data(self, request, **kwargs):
+        """
+        :return: Dictionary context:
+            - owner (str): Owner username
+            - admins (list) or (str): If there are administrators in the community, a list will be returned,
+            otherwise a message "You have no admins yet" will be returned
+            - admins (list) or (str): If there are moderators in the community, a list will be returned,
+            otherwise a message "You have no moderators yet" will be returned
+            - instance (str): Community instance name
+            - community_id (int): Community id
+            - followers_count (int): Number of subscribed users
+            - all_posts (list): List of all community posts
+        """
         context = super().get_context_data(request)
         instance = get_object_or_404(Community, name=self.kwargs["name"])
 
@@ -230,18 +325,6 @@ class AdminPanelView(ViewWitsContext):
         context["instance"] = instance
         context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers_count"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
-        context["followers_list"] = CommunityFollowers.objects.filter(community=instance, is_follow=True)
-        context["black_list"] = BlackList.objects.filter(community=instance).select_related("user__user")
-        banned_users = [
-            {
-                "id": entry.user.id,
-                "blacklist_id": entry.id,
-                "username": entry.user.user.username,
-                "reason": entry.reason,
-            }
-            for entry in context["black_list"]
-        ]
-        context["banned_users"] = banned_users
 
         # context["last_actions"] = ...
 
@@ -262,7 +345,7 @@ class AdminPanelView(ViewWitsContext):
         Pointing method to other views or actions
 
         :param request: HTTP request object that can include '?followers_list' or '?edit' in the query parameters.
-        :param args: Additional positional arguments.
+        :param args: Additional arguments.
         :param kwargs: Expects 'name' as a string taken from the URL.
 
         :return: Redirect to other views or render view template
@@ -289,7 +372,7 @@ class AdminPanelView(ViewWitsContext):
 
         :param request: HTTP request object that can include '?put_ban' or '?remove_ban' in the query parameters.
         And 'XMLHttpRequest' in request headers.
-        :param args: Additional positional arguments.
+        :param args: Additional arguments.
         :param kwargs: Expects 'name' as a string taken from the URL.
 
         :return: Redirect to other views or render:
@@ -331,15 +414,25 @@ class BlackListView(ViewWitsContext):
     template_name = "community/community_detail/admin_panel/users_list.html"
 
     def get_context_data(self, request, **kwargs):
+        """
+        :return: Dictionary context:
+        - black_list (list): List of blacklisted users
+        - banned_users (list[dict[int, int, str, str]]): Info about the banned users
+            - id (int): User id
+            - blacklist_id (int): Database record ID
+            - username (str): User username
+            - reason (str): Reason why the user was blacklisted
+        - followers (list) List of subscribed users
+        - community (str): Community instance name
+        """
         context = super().get_context_data(request)
         # Special variables
         community = get_object_or_404(Community, name=self.kwargs["name"])
         followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
         banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
-        black_list_filtered = BlackList.objects.filter(community__name=kwargs.get("name"))
 
         # Context variables
-        context["black_list"] = black_list_filtered.select_related("user__user")
+        context["black_list"] = BlackList.objects.filter(community=community).select_related("user__user")
         banned_users = [
             {
                 "id": entry.user.id,
@@ -365,7 +458,7 @@ class BlackListView(ViewWitsContext):
         Return data about banned users in a community.
 
         :param request: None
-        :param args: Additional positional arguments.
+        :param args: Additional arguments.
         :param kwargs: Expects 'name' as a string taken from the URL.
 
         :return: Rendered HTTP response with the following context:
@@ -392,10 +485,10 @@ class BlackListView(ViewWitsContext):
         Redirects data in functions depending on the selected action to pages
 
         :param request: To ban user '?put_ban', to remove user from black list '?remove_ban'
-        :param args: Additional positional arguments.
+        :param args: Additional arguments.
         :param kwargs: Expects 'user_id' as int taken from the query parameters.
 
-        :return:  Return JsonResponse in case of bad request.
+        :return: Return JsonResponse in case of bad request.
         """
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             data = json.loads(request.body)

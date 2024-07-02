@@ -11,7 +11,7 @@ from community.models import Community
 from users.models import CustomUser, Publication, Followers
 from .constants import PROGRAMMING_LANGUAGES
 from .forms import ThreadForm
-from core.helpers import post_request_details, data_handler
+from core.helpers import post_request_details
 from core.mixins import RemoveCommentsMixin, DetailMixin
 from .models import ProgrammingLanguage, TutorialPage, SubSection, Notification, Comments
 from .models import Thread

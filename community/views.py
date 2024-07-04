@@ -350,7 +350,7 @@ class AdminPanelView(ViewWitsContext):
 
         :return: Redirect to other views or render view template
             - If param request is 'edit': render edit_template
-            - If param request is 'followers_list': redirect to the BlackListView view where all users will be displayed
+            - If param request is 'followers_list': redirect to the UserManagementView view where all users will be displayed
             - For other ways: render view base template
         """
         context = self.get_context_data(request, **kwargs)
@@ -361,7 +361,7 @@ class AdminPanelView(ViewWitsContext):
             return render(request, edit_template, {"form": form})
 
         if "followers_list" in request.GET:
-            return redirect("blacklist/")
+            return redirect("users-management/")
 
         return render(request, self.template_name, context)
 
@@ -379,9 +379,9 @@ class AdminPanelView(ViewWitsContext):
             - If request without any params: redirect to self
 
             - If param request is 'put_ban' and request headers is 'XMLHttpRequest':
-            redirect to BlackListView with param 'put_ban'
+            redirect to UserManagementView with param 'put_ban'
 
-            - If param request is 'remove_ban': redirect to BlackListView with param 'remove_ban'
+            - If param request is 'remove_ban': redirect to UserManagementView with param 'remove_ban'
         """
         context = self.get_context_data(request, **kwargs)
 
@@ -405,11 +405,7 @@ class AdminPanelView(ViewWitsContext):
         return render(request, edit_template, {"form": form})
 
 
-class BlackListView(ViewWitsContext):
-    """
-    View to ban users in community
-    """
-
+class UsersManagementView(ViewWitsContext):
     class_form = BlackListForm
     template_name = "community/community_detail/admin_panel/users_list.html"
 
@@ -577,3 +573,11 @@ class BlackListView(ViewWitsContext):
             return JsonResponse({"status": "success"})
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+    @staticmethod
+    def grant_privileges(request, data):
+        ...
+
+    @staticmethod
+    def remove_privileges(request, data):
+        ...

@@ -2,6 +2,7 @@ from django import forms
 
 from core.helpers import form_check_len
 from community.models import Community, BlackList
+from users.models import Moderators
 
 
 class CreateCommunityForm(forms.ModelForm):
@@ -33,9 +34,9 @@ class BlackListForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(BlackListForm, self).__init__(*args, **kwargs)
-        # self.fields["user"].widget = forms.HiddenInput()
+        self.fields["user"].widget = forms.HiddenInput()
         self.fields["user"].initial = kwargs.get("initial", {}).get("user")
-        # self.fields["community"].widget = forms.HiddenInput()
+        self.fields["community"].widget = forms.HiddenInput()
         self.fields["community"].initial = kwargs.get("initial", {}).get("community")
 
     def clean_reason(self):
@@ -43,3 +44,14 @@ class BlackListForm(forms.ModelForm):
         too_short_error = "Please add more details to the reason"
         too_long_error = "The reason is too long"
         return form_check_len(reason, 50, 2000, too_short_error, too_long_error)
+
+
+class PrivilegesForm(forms.ModelForm):
+    class Meta:
+        model = Moderators
+        fields = ["user", "is_owner", "is_admin", "is_moderator"]
+
+    def __init__(self, *args, **kwargs):
+        super(PrivilegesForm, self).__init__(*args, **kwargs)
+        self.fields["user"].widget = forms.HiddenInput()
+        self.fields["user"].initial = kwargs.get("initial", {}).get("user")

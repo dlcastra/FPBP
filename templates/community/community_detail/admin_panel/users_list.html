@@ -7,6 +7,32 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script defer src="{% static 'black_list.js' %}"></script>
+    <script defer src="{% static 'community_privileges.js' %}"></script>
+    <style>
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0, 0, 0); /* Fallback color */
+            background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%; /* Could be more or less, depending on screen size */
+        }
+
+    </style>
 </head>
 <body>
 <h2>Followers list</h2>
@@ -21,14 +47,29 @@
             {% csrf_token %}
         </div>
     </form>
-    <form>
-        <input type="submit" name="privileges" value="Grant privileges"
+    <form class="privilegesForm" data-action="grant_privileges" method="post">
+        <input type="button" class="grant-btn" name="grant_privileges" value="Grant privileges"
                data-follower-id="{{ follower.user.id }}"
                data-instance="{{ instance }}">
-        <input type="hidden" name="privileges" value="privileges">
+        <input type="hidden" name="grant_privileges" value="privileges">
         {% csrf_token %}
     </form>
+    <div id="privilegesModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h4>Grant Privileges</h4>
+            <form id="privilegesSelectionForm" method="post">
+                <label><input type="radio" name="privilege" value="Owner"> Owner</label><br>
+                <label><input type="radio" name="privilege" value="Admin"> Admin</label><br>
+                <label><input type="radio" name="privilege" value="Moderator"> Moderator</label><br>
+                <button type="button" id="submitPrivileges">Submit</button>
+            </form>
+        </div>
+    </div>
+
+
+
 {% endfor %}
+
 
 <h1>Black List</h1>
 
@@ -54,6 +95,7 @@
                                data-instance="{{ instance }}"
                         >
                     </div>
+                    {% csrf_token %}
                 </form>
             </td>
         </tr>

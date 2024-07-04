@@ -12,7 +12,7 @@ from django.views import View
 from django.views.generic import ListView
 
 from app.models import Notification
-from community.forms import CreateCommunityForm, BlackListForm
+from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests, BlackList
 from core.decorators import owner_required
 from core.helpers import base_post_method
@@ -406,7 +406,6 @@ class AdminPanelView(ViewWitsContext):
 
 
 class UsersManagementView(ViewWitsContext):
-    class_form = BlackListForm
     template_name = "community/community_detail/admin_panel/users_list.html"
 
     def get_context_data(self, request, **kwargs):
@@ -494,6 +493,8 @@ class UsersManagementView(ViewWitsContext):
                 return self.ban_user(request, data)
             if action == "remove_ban":
                 return self.delete_user_from_blacklist(request, data)
+            if action == "grant_privileges":
+                return self.grant_privileges(request, data)
 
         return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
@@ -575,9 +576,31 @@ class UsersManagementView(ViewWitsContext):
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
     @staticmethod
-    def grant_privileges(request, data):
-        ...
+    def grant_privileges(request, data: json):
+        try:
+            user_id = data.get("follower_id")
+            privilege = data.get("privilege")
+            instance_name = data.get("instance")
+            print(instance_name)
+            community = get_object_or_404(Community, name=instance_name)
+
+            if privilege == "Owner":
+                ...
+            elif privilege == "Admin":
+                admin, created = Moderators.objects.get_or_create(user_id=user_id, is_admin=True)
+                if not created:
+                    community.admins.add(admin)
+                    admin.save()
+
+            elif privilege == "Moderator":
+                moderator, created = Moderators.objects.get_or_create(user_id=user_id, is_moderator=True)
+                if not created:
+                    community.admins.add(moderator)
+                    moderator.save()
+            return JsonResponse({"status": "success"})
+
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
     @staticmethod
-    def remove_privileges(request, data):
-        ...
+    def remove_privileges(request, data): ...

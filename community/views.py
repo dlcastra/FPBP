@@ -71,6 +71,8 @@ class CommunityView(ViewWitsContext):
         author_id = community_data.admins.get(is_owner=True).user.id
         publication_form = PublishForm(initial={"author_id": author_id})
         is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
+        is_admin = Moderators.objects.filter(user=self.request.user, is_admin=True).exists()
+        is_moderator = Moderators.objects.filter(user=self.request.user, is_moderator=True).exists()
 
         # FOLLOWERS DATA
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
@@ -89,6 +91,8 @@ class CommunityView(ViewWitsContext):
         context["is_follow_user"] = is_follow_user
         context["request_status"] = request_status
         context["is_owner"] = is_owner
+        context["is_admin"] = is_admin
+        context["is_moderator"] = is_moderator
         context["author_id"] = author_id
         return context
 
@@ -336,8 +340,6 @@ class AdminPanelView(ViewWitsContext):
             context["all_posts"] = "You don't have any publication, but you can change that right now!"
 
         return context
-
-    """ -------- BASE METHODS: Call a specific function depending on the keyword -------- """
 
     @method_decorator(owner_required)
     def get(self, request, *args, **kwargs):
@@ -588,15 +590,17 @@ class UsersManagementView(ViewWitsContext):
                 ...
             elif privilege == "Admin":
                 admin, created = Moderators.objects.get_or_create(user_id=user_id, is_admin=True)
-                if not created:
-                    community.admins.add(admin)
+                if not community.admins.filter(id=admin.id, is_admin=True).exists():
+                    admin.is_admin = True
                     admin.save()
+                    community.admins.add(admin)
 
             elif privilege == "Moderator":
                 moderator, created = Moderators.objects.get_or_create(user_id=user_id, is_moderator=True)
-                if not created:
-                    community.admins.add(moderator)
+                if not community.admins.filter(id=moderator.id, is_admin=True).exists():
+                    moderator.is_admin = True
                     moderator.save()
+                    community.admins.add(moderator)
             return JsonResponse({"status": "success"})
 
         except Exception as e:

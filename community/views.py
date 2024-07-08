@@ -518,7 +518,7 @@ class UsersManagementView(ViewWitsContext):
         managers_list = {
             "admins": context["admins"],
             "moderators": context["moderators"],
-            "instance": context["community"]
+            "instance": context["community"],
         }
 
         return render(request, list_template, managers_list)
@@ -634,6 +634,6 @@ class UsersManagementView(ViewWitsContext):
         manager_id = data.get("managerId")
         try:
             print(f"Removed manager with id: {manager_id}")
-            return JsonResponse({'status': 'success'})
+            return JsonResponse({"status": "success"})
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)

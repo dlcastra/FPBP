@@ -63,4 +63,38 @@ $(document).ready(function () {
             $('#privilegesModal').hide();
         }
     });
+
+    $(document).on('click', '.removePrivilege input[type="submit"]', function (event) {
+        event.preventDefault();
+        const managerId = $(this).data('manager-id');
+        const instance = $(this).data('instance');
+        const action = $(this).data('action');
+
+        if (managerId && action && instance) {
+            $.ajax({
+                type: 'POST',
+                url: `/community/name-${instance}/admin-panel/users-management/`,
+                data: JSON.stringify({
+                    manager_id: managerId,
+                    instance: instance,
+                    action: action
+                }),
+                contentType: 'application/json',
+                success: function (response) {
+                    if (response.status === "success") {
+                        alert("Privileges removed successfully");
+                        window.location.reload();
+                    } else {
+                        alert("Error: " + response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert("Error removing privileges: " + xhr.responseText);
+                }
+            });
+        } else {
+            alert("Invalid request");
+        }
+    });
+
 });

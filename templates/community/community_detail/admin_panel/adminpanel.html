@@ -13,8 +13,7 @@
 <br>
 
 <p>Owner: {{ owner }}</p>
-<p>Admins list: {{ admins }}</p>
-<p>Moderators list: {{ moderators }}</p><br>
+<p><a href="{% url 'users_management' name=instance %}?managers_list">Admins and moderators</a></p>
 <p>Posts counter: {{ all_posts.count }}</p>
 {% for post in all_posts %}
     <p>Post ID:{{ post.id }} | Title: {{ post.title }}</p>

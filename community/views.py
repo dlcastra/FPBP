@@ -427,6 +427,9 @@ class UsersManagementView(ViewWitsContext):
         community = get_object_or_404(Community, name=self.kwargs["name"])
         followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
         banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
+        context["owner"] = get_object_or_404(Moderators, is_owner=True)
+        context["admins"] = Moderators.objects.filter(is_admin=True)
+        context["moderators"] = Moderators.objects.filter(is_moderator=True)
 
         # Context variables
         context["black_list"] = BlackList.objects.filter(community=community).select_related("user__user")
@@ -465,6 +468,10 @@ class UsersManagementView(ViewWitsContext):
             - csrf_token (str): CSRF token for the request.
         """
         context = self.get_context_data(request, **kwargs)
+
+        if "managers_list" in request.GET:
+            return self.get_managers_list(request, **kwargs)
+
         return render(
             request,
             self.template_name,
@@ -487,6 +494,9 @@ class UsersManagementView(ViewWitsContext):
 
         :return: Return JsonResponse in case of bad request.
         """
+        # is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
+        print(request.headers)
+        print(request.headers.get("X-Requested-With"))
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             data = json.loads(request.body)
             print(data)
@@ -497,8 +507,21 @@ class UsersManagementView(ViewWitsContext):
                 return self.delete_user_from_blacklist(request, data)
             if action == "grant_privileges":
                 return self.grant_privileges(request, data)
+            if action == "remove_privileges":
+                return self.remove_privileges(request, data)
 
         return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+    def get_managers_list(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        list_template = "community/community_detail/admin_panel/community_managers.html"
+        managers_list = {
+            "admins": context["admins"],
+            "moderators": context["moderators"],
+            "instance": context["community"]
+        }
+
+        return render(request, list_template, managers_list)
 
     @staticmethod
     def ban_user(request, data: json):
@@ -598,7 +621,7 @@ class UsersManagementView(ViewWitsContext):
             elif privilege == "Moderator":
                 moderator, created = Moderators.objects.get_or_create(user_id=user_id, is_moderator=True)
                 if not community.admins.filter(id=moderator.id, is_admin=True).exists():
-                    moderator.is_admin = True
+                    moderator.is_moderator = True
                     moderator.save()
                     community.admins.add(moderator)
             return JsonResponse({"status": "success"})
@@ -607,4 +630,10 @@ class UsersManagementView(ViewWitsContext):
             return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
     @staticmethod
-    def remove_privileges(request, data): ...
+    def remove_privileges(request, data: json):
+        manager_id = data.get("managerId")
+        try:
+            print(f"Removed manager with id: {manager_id}")
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

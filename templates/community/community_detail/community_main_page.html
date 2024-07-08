@@ -54,40 +54,39 @@
 
 <body>
 <h1>{{ community_data.name }}</h1>
+
+{% if not community_data.is_private or is_follow_user.exists or request.user in community_data.admins.all %}
+    <button type="button" id="follow-button"
+            data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}"
+            value="follow">
+        {{ follow_value }}: {{ community_followers.count }}
+    </button>
+    <a href="{% url "community_followers" community_data.name %}">Followers</a>
+    <br>
+{% endif %}
+
+{% if community_data.is_private and not is_follow_user.exists %}
+    <button type="button" id="request_btn"
+            data-action="{% if not request_status %}send_request{% else %}remove_request{% endif %}">
+        {% if request_status %}Request already sent{% else %}Send Request{% endif %}
+    </button>
+{% endif %}
+
 {% for admin in community_data.admins.all %}
-    {% if not community_data.is_private or community_data.is_private and  is_follow_user.exists or admin %}
-        {% if request.user != admin and  not community_data.is_private or  is_follow_user.exists %}
-            <button type="button" id="follow-button"
-                    data-action="{% if user in community_followers %}unfollow{% else %}follow{% endif %}"
-                    value="follow">
-                {{ follow_value }}: {{ community_followers.count }}
-            </button>
-        {% endif %}
-        <a href="{% url "community_followers" community_data.name %}"> Followers </a>
+    {% if user.id == admin.user.id %}
+        <a href="/community/name-{{ name }}/admin-panel/">Admin panel</a>
+        <div id="publication-form">
+            {% include "publications/create_publication.html" with form=publication_form %}
+        </div>
         <br>
-
-        {% if user.id == admin.id and admin.is_owner %}
-            <a href="/community/name-{{ name }}/admin-panel/">Admin panel</a>
-            <div id="publication-form">{% include "publications/create_publication.html" with form=publication_form %}</div>
-            <br>
-        {% endif %}
-
-        {% if community_data.posts.exists %}
-            {% for post in community_data.posts.all %}
-
-                <a id="community-post" href="/publication/{{ post.id }}/">{{ post.title }}</a>
-            {% endfor %}
-        {% else %}
-
-
-        {% endif %}
     {% endif %}
-    {% if community_data.is_private and reqeust.user != admin and not is_follow_user.exists %}
-        <button type="button" id="request_btn"
-                data-action="{% if not request_status %}send_request{% else %}remove_request{% endif %}">
-            {% if request_status %}Request already sent{% else %}Send Request{% endif %}
-        </button>
+{% endfor %}
 
-    {% endif %}{% endfor %}
+{% if community_data.posts.exists %}
+    {% for post in community_data.posts.all %}
+        <a id="community-post" href="/publication/{{ post.id }}/">{{ post.title }}</a>
+    {% endfor %}
+{% endif %}
 </body>
+
 </html>

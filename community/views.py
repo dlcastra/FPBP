@@ -427,9 +427,15 @@ class UsersManagementView(ViewWitsContext):
         community = get_object_or_404(Community, name=self.kwargs["name"])
         followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
         banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
-        context["owner"] = get_object_or_404(Moderators, is_owner=True)
-        context["admins"] = Moderators.objects.filter(is_admin=True)
-        context["moderators"] = Moderators.objects.filter(is_moderator=True)
+
+        # Community managers
+        context["owner"] = community.admins.get(is_owner=True)
+        context["admins"] = community.admins.filter(is_admin=True)
+        context["moderators"] = community.admins.filter(is_moderator=True)
+        if not context["admins"]:
+            context["admins"] = "You have no admins yet"
+        if not context["moderators"]:
+            context["moderators"] = "You have no moderators yet"
 
         # Context variables
         context["black_list"] = BlackList.objects.filter(community=community).select_related("user__user")
@@ -495,8 +501,6 @@ class UsersManagementView(ViewWitsContext):
         :return: Return JsonResponse in case of bad request.
         """
         # is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
-        print(request.headers)
-        print(request.headers.get("X-Requested-With"))
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             data = json.loads(request.body)
             print(data)
@@ -631,8 +635,12 @@ class UsersManagementView(ViewWitsContext):
 
     @staticmethod
     def remove_privileges(request, data: json):
-        manager_id = data.get("managerId")
+        manager_id = data.get("manager_id")
+        community_instance = data.get("instance")
+        community = get_object_or_404(Community, name=community_instance)
         try:
+            manager = get_object_or_404(Moderators, id=manager_id)
+            community.admins.remove(manager)
             print(f"Removed manager with id: {manager_id}")
             return JsonResponse({"status": "success"})
         except Exception as e:

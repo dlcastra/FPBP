@@ -106,7 +106,7 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console"],
+        # "handlers": ["console"],
         "level": "DEBUG",
     },
 }

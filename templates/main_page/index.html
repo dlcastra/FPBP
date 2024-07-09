@@ -1,93 +1,14 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}My Site{% endblock %}</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            const notificationButton = $('#notification-button');
-            const notificationList = $('#notification-list');
-            const notificationCountSpan = $('#notification-count');
-            const csrfToken = '{{ csrf_token }}';
-            const socket = new WebSocket('ws://' + window.location.host + '/ws/notify/');
 
-            socket.onmessage = function (event) {
-                const data = JSON.parse(event.data);
-                if (data.message) {
-                    const notificationElement = $('<li>')
-                        .html(data.message)
-                        .attr('data-id', data.id);
-
-                    if (!data.is_read) {
-                        const markReadButton = $('<button>')
-                            .text('Mark as Read')
-                            .addClass('mark-read-button');
-
-                        notificationElement.append(markReadButton);
-                    }
-
-                    notificationList.append(notificationElement);
-                    notificationCountSpan.text(notificationList.children().length);
-                }
-            };
-
-            socket.onclose = function () {
-                console.error('WebSocket closed unexpectedly');
-            };
-
-            notificationButton.on('click', function () {
-                notificationList.toggle();
-            });
-
-            notificationList.on('click', '.mark-read-button', function () {
-                const notificationElement = $(this).closest('li');
-                const notificationId = notificationElement.attr('data-id');
-
-                $.ajax({
-                    url: window.location.href,
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    data: JSON.stringify({mark_read: true, id: notificationId}),
-                    success: function (data) {
-                        if (data.status === 'ok') {
-                            notificationElement.remove();
-                            notificationCountSpan.text(notificationList.children().length);
-                        }
-                    },
-                    error: function (error) {
-                        console.error('There was a problem with the AJAX request:', error);
-                    }
-                });
-            });
-
-            $('#mark-read-all-btn').click(function () {
-                $.ajax({
-                    url: window.location.href,
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken
-                    },
-                    data: JSON.stringify({mark_read_all: true}),
-                    success: function (data) {
-                        if (data.status === 'ok') {
-                            notificationList.empty();
-                            notificationCountSpan.text(0);
-                        }
-                    },
-                    error: function (error) {
-                        console.error('There was a problem with the AJAX request:', error);
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="/static/comments.js"></script>
+    <script src="/static/notifications.js"></script>
     <style>
         #notification-list {
             display: none;
@@ -174,12 +95,19 @@
         </label>
         {% if request.user.is_authenticated %}
             <form id="commentForm_{{ content.id }}{{ content.content_type.id }}" class="commentForm">
-                <input type="text" id="title_{{ content.id }}{{ content.content_type.id }}" placeholder="Title" required><br><br>
-                <textarea id="content_{{ content.id }}{{ content.content_type.id }}" placeholder="Add feedback here (max. 255 characters)" maxlength="255"
-                          style="width: 100%; max-width: 750px; height: 100px; resize: none; border-radius: 15px;" required></textarea><br>
-                <input type="hidden" id="user_id_{{ content.id }}{{ content.content_type.id }}" value="{{ request.user.id }}">
-                <input type="hidden" id="content_type_id_{{ content.id }}{{ content.content_type.id }}" value="{{ content.content_type.id }}"><br>
-                <input type="hidden" id="object_id_{{ content.id }}{{ content.content_type.id }}" value="{{ content.id }}"><br>
+                <textarea id="content_{{ content.id }}{{ content.content_type.id }}"
+                          placeholder="Add feedback here (max. 255 characters)" maxlength="255"
+                          style="width: 100%; max-width: 750px; height: 100px; resize: none; border-radius: 15px;"
+                          required></textarea><br>
+                <input type="hidden" id="user_id_{{ content.id }}{{ content.content_type.id }}"
+                       value="{{ request.user.id }}">
+                <input type="hidden"
+                       id="username_id_{{ content.id }}{{ content.content_type.id }}"
+                       value="{{ request.user.username }}">
+                <input type="hidden" id="content_type_id_{{ content.id }}{{ content.content_type.id }}"
+                       value="{{ content.content_type.id }}"><br>
+                <input type="hidden" id="object_id_{{ content.id }}{{ content.content_type.id }}"
+                       value="{{ content.id }}"><br>
                 <input type="file" id="file_{{ content.id }}{{ content.content_type.id }}" accept=".txt,.pdf,.docx">
                 <input type="file" id="image_{{ content.id }}{{ content.content_type.id }}" accept="image/*"><br>
                 <button type="submit">Send Comment</button>
@@ -187,11 +115,12 @@
         {% else %}
             <p>You need to be logged in to send a comment.</p>
         {% endif %}
-        <div class="scrollable-text" id="comments_{{ content.id }}{{ content.content_type.id }}" style="overflow-y: scroll; height: 300px;">
+        <div class="scrollable-text" id="comments_{{ content.id }}{{ content.content_type.id }}"
+             style="overflow-y: scroll; height: 300px;">
             {% if content.comments %}
                 {% for comment in content.comments %}
                     <div class="feedback" data-feedback-id="{{ comment.id }}">
-                        <h5>User: {{ comment.user.username }} | Article: {{ comment.title }}</h5>
+                        <h5>User: {{ comment.user.username }}</h5>
                         <span class="feedback-text">{{ comment.context }}</span>
                         <br><br>
                     </div>
@@ -203,94 +132,5 @@
     </div>
 {% endfor %}
 
-
-<script>
-$(document).ready(function () {
-    const socket = new WebSocket(`ws://${window.location.host}/ws/comments/`);
-
-    socket.onopen = function () {
-        console.log("WebSocket connection established.");
-    };
-
-    socket.onmessage = function (event) {
-        const data = JSON.parse(event.data);
-        if (data.comment) {
-            displayComment(data.comment);
-        }
-    };
-
-    socket.onclose = function () {
-        console.log("WebSocket connection closed.");
-    };
-
-    $('.commentForm').on('submit', async function (event) {
-        event.preventDefault();
-
-        const form = $(this);
-        const contentId = form.attr('id').split('_')[1];
-
-
-        const userId = $(`#user_id_${contentId}`).val();
-        const objectId = $(`#object_id_${contentId}`).val();
-        const title = $(`#title_${contentId}`).val().trim();
-        const content = $(`#content_${contentId}`).val().trim();
-        const contentTypeId = $(`#content_type_id_${contentId}`).val();
-
-        const fileInput = $(`#file_${contentId}`)[0];
-        const imageInput = $(`#image_${contentId}`)[0];
-
-
-        const message = {
-            title: title,
-            user_id: userId,
-            content: content,
-            content_type_id: contentTypeId,
-            object_id: objectId,
-            object_ct_id:contentId,
-            file: fileInput.files[0] ? await fileToBase64(fileInput.files[0]) : null,
-            image: imageInput.files[0] ? await fileToBase64(imageInput.files[0]) : null,
-        };
-
-        socket.send(JSON.stringify(message));
-        form[0].reset();
-    });
-
-    async function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    }
-
-   function displayComment(comment) {
-    if (!comment || !comment.object_id || !comment.content) {
-        console.error("Invalid comment data", comment);
-        return;
-    }
-
-    const commentsDiv = $(`#comments_${comment.object_ct_id}`);
-        console.log(commentsDiv)
-    if (commentsDiv.length === 0) {
-        console.error("Comments container not found for object ID:", comment.object_id);
-        return;
-    }
-
-    const commentElement = $(`
-        <div class="feedback" data-feedback-id="${comment.id}">
-            <h5>User: ${comment.user} | Article: ${comment.title}</h5>
-            <span class="feedback-text">${comment.content}</span>
-            <br><br>
-        </div>
-    `);
-
-    commentsDiv.append(commentElement);
-    commentsDiv.scrollTop(commentsDiv.prop("scrollHeight"));
-}
-
-});
-
-</script>
 </body>
 </html>

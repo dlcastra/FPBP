@@ -1,3 +1,4 @@
+
 <form method="get">
     {% if request.user == user %}
         <input type="submit" value="Edit" name="edit">
@@ -13,4 +14,4 @@
         {% endif %}
     {% endfor %}
 </form>
-{% include 'main_page/answers.html' with comments=comments content_type_id=content_type.id %}
+{% include 'main_page/answers.html' with comments=comments content_type_id=content_type.id object_id=object_id %}

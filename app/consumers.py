@@ -44,23 +44,22 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
         data = json.loads(text_data)
         logger.debug(f"Received data: {data}")
-
-        title = data.get("title")
+        username = data["username"]
         user_id = data.get("user_id")
         content = data.get("content")
         content_type_id = data.get("content_type_id")
+        object_ct_id = data.get("object_ct_id")
         object_id = data.get("object_id")
         file = data.get("file")
         image = data.get("image")
 
         # Ensure all necessary data is present
-        if not (title and content and user_id and content_type_id and object_id):
+        if not (content and user_id and content_type_id and object_id):
             logger.error("Missing required fields")
             return
 
         # Create comment asynchronously using sync_to_async
         comment = await sync_to_async(Comments.objects.create)(
-            title=title,
             context=content,
             object_id=object_id,
             image=image,
@@ -73,13 +72,14 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         response = {
             "type": "send_comment",
             "comment": {
-                "title": comment.title,
+                "username": username,
                 "content": comment.context,
                 "user_id": comment.user_id,
                 "object_id": comment.object_id,
-                "object_ct_id": f"{comment.object_id}" + comment.content_type_id,
+                "object_ct_id": object_ct_id,
             },
         }
+
         if comment.file:
             response["file_url"] = comment.file.url
 

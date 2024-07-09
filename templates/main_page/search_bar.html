@@ -2,37 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    {% load static %}
     <title>Title</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script>
-        $(function () {
-            $("#search").autocomplete({
-                source: function (request, response) {
-                    $.ajax({
-                        url: "{% url 'autocomplete' %}",
-                        data: {
-                            term: request.term
-                        },
-                        dataType: "json",
-                        success: function (data) {
-                            response($.map(data, function (item) {
-                                return {
-                                    label: item.label,
-                                    value: item.label,
-                                    url: item.url
-                                };
-                            }));
-                        }
-                    });
-                },
-                minLength: 2,
-                select: function (event, ui) {
-                    window.location.href = ui.item.url;
-                }
-            });
-        });
+
+    <script defer src="{% static 'search_bar.js' %}">
+
     </script>
 
 </head>

@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import TemplateView, View, DetailView
 from abc import ABC, abstractmethod
 
-from core.helpers import data_handler, post_request_details
+from core.helpers import post_request_details
 from app.models import Comments
 
 
@@ -92,8 +92,6 @@ class DetailMixin(ABC, DetailView):
         content_type = ContentType.objects.get_for_model(self.get_model_class())
         model_detail = get_object_or_404(self.get_model_class(), pk=pk)
         comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
-        get_context = data_handler(request, pk, self.get_comments_template(), content_type.id)
-        get_context["model_detail"] = model_detail
         context = {
             "user": user,
             "model_class": model_class,
@@ -126,11 +124,11 @@ class DetailMixin(ABC, DetailView):
         template = self.render_main_template()
         user_checker = request.user.is_authenticated and request.user.id == context["model_detail"].author_id
 
-        if "edit" in request.GET and user_checker:
-            edit_template = self.render_edit_template()
-            form_class = self.get_form_class()
-            form = form_class(instance=self.get_object())
-            return render(request, edit_template, {"form": form, **context})
+        # if "edit" in request.GET and user_checker:
+        #     edit_template = self.render_edit_template()
+        #     form_class = self.get_form_class()
+        #     form = form_class(instance=self.get_object())
+        #     return render(request, edit_template, {"form": form, **context})
 
         return render(request, template, context)
 

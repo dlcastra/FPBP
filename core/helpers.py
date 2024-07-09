@@ -1,30 +1,5 @@
 from django import forms
-from django.contrib.contenttypes.models import ContentType
 from django.http import HttpResponseRedirect
-from django.middleware.csrf import get_token
-from django.template.loader import render_to_string
-from django.urls import reverse
-
-from app.models import Comments
-
-
-def data_handler(request, pk, template, content_type_id):
-    model_class = ContentType.objects.get_for_id(content_type_id).model
-    comments = Comments.objects.filter(object_id=pk, content_type=ContentType.objects.get_for_id(content_type_id)).all()
-    user = request.user
-    user_id = user.id
-
-    feedback_html = render_to_string(
-        template_name=template,
-        context={"comments": comments, "csrf_token": get_token(request), "user": user, "model_class": model_class},
-    )
-
-    return {
-        "feedback_html": feedback_html,
-        "user_id": user_id,
-        "csrf_token": get_token(request),
-        "model_class": model_class,
-    }
 
 
 def post_request_details(request, form_with_files, redirect_url):

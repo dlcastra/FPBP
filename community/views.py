@@ -18,7 +18,7 @@ from core.decorators import owner_required
 from core.helpers import base_post_method
 from core.mixins import ViewWitsContext
 from users.forms import PublishForm
-from users.models import Moderators, Publication
+from users.models import Moderators
 
 
 class CreateCommunityView(View):
@@ -70,9 +70,14 @@ class CommunityView(ViewWitsContext):
         # PUBLICATION DATA
         author_id = community_data.admins.get(is_owner=True).user.id
         publication_form = PublishForm(initial={"author_id": author_id})
-        is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
-        is_admin = Moderators.objects.filter(user=self.request.user, is_admin=True).exists()
-        is_moderator = Moderators.objects.filter(user=self.request.user, is_moderator=True).exists()
+
+        if request.user.is_authenticated:
+            is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
+            is_admin = Moderators.objects.filter(user=self.request.user, is_admin=True).exists()
+            is_moderator = Moderators.objects.filter(user=self.request.user, is_moderator=True).exists()
+            context["is_owner"] = is_owner
+            context["is_admin"] = is_admin
+            context["is_moderator"] = is_moderator
 
         # FOLLOWERS DATA
         community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
@@ -90,9 +95,6 @@ class CommunityView(ViewWitsContext):
         context["community_followers"] = community_followers
         context["is_follow_user"] = is_follow_user
         context["request_status"] = request_status
-        context["is_owner"] = is_owner
-        context["is_admin"] = is_admin
-        context["is_moderator"] = is_moderator
         context["author_id"] = author_id
         return context
 
@@ -110,7 +112,8 @@ class CommunityView(ViewWitsContext):
             - is_follow_user (int): request user id
         """
         context = self.get_context_data(request, **kwargs)
-        context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
+        if request.user.is_authenticated:
+            context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -293,10 +296,8 @@ class AdminPanelView(ViewWitsContext):
 
     """
     What needs to be added:
-        1. Granting privileges (admin or moderator)
-        2. Removal of privileges
-        3. View recent activity
-        4. Possibility to delete/hide posts
+        1. View recent activity
+        2. Possibility to delete/hide posts
     """
 
     def get_context_data(self, request, **kwargs):
@@ -315,27 +316,17 @@ class AdminPanelView(ViewWitsContext):
         context = super().get_context_data(request)
         instance = get_object_or_404(Community, name=self.kwargs["name"])
 
-        # COMMUNITY MANAGERS DATA
-        context["owner"] = get_object_or_404(Moderators, is_owner=True, user_id=request.user.id)
-        context["admins"] = Moderators.objects.filter(is_admin=True)
-        context["moderators"] = Moderators.objects.filter(is_moderator=True)
-
-        if not context["admins"]:
-            context["admins"] = "You have no admins yet"
-        if not context["moderators"]:
-            context["moderators"] = "You have no moderators yet"
-
         # COMMUNITY BASE DATA
         context["instance"] = instance
         context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers_count"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
-
+        context["owner"] = instance.admins.get(is_owner=True)
         # context["last_actions"] = ...
 
         # GET COMMUNITY PUBLICATIONS
         owner = instance.admins.filter(is_owner=True).first()
         if owner:
-            context["all_posts"] = list(Publication.objects.filter(author_id=owner.user.id).values())
+            context["all_posts"] = list(instance.posts.filter(author_id=owner.user.id).values())
         else:
             context["all_posts"] = "You don't have any publication, but you can change that right now!"
 
@@ -380,10 +371,6 @@ class AdminPanelView(ViewWitsContext):
         :return: Redirect to other views or render:
             - If request without any params: redirect to self
 
-            - If param request is 'put_ban' and request headers is 'XMLHttpRequest':
-            redirect to UserManagementView with param 'put_ban'
-
-            - If param request is 'remove_ban': redirect to UserManagementView with param 'remove_ban'
         """
         context = self.get_context_data(request, **kwargs)
 
@@ -395,14 +382,6 @@ class AdminPanelView(ViewWitsContext):
 
         if redirect_response:  # To edit community data
             return redirect_response
-
-        request_headers = request.headers.get("X-Requested-With")
-        request_action = json.loads(request.body)["action"]
-        if request_headers == "XMLHttpRequest" and request_action == "put_ban":  # To ban a user
-            return redirect("blacklist", name=self.kwargs["name"])
-
-        if "remove_ban" in request.POST:  # To unban a user
-            return redirect("blacklist", name=self.kwargs["name"])
 
         return render(request, edit_template, {"form": form})
 
@@ -450,11 +429,10 @@ class UsersManagementView(ViewWitsContext):
         ]
         context["banned_users"] = banned_users
         context["followers"] = []
-        for follower in followers:
-            if follower.user.id not in banned_user_list:
-                context["followers"].append(follower)
-            elif not banned_user_list:
-                context["followers"] = followers
+        if banned_user_list:
+            context["followers"] = [follower for follower in followers if follower.user.id not in banned_user_list]
+        else:
+            context["followers"] = followers
         context["community"] = community
 
         return context
@@ -610,19 +588,30 @@ class UsersManagementView(ViewWitsContext):
             user_id = data.get("follower_id")
             privilege = data.get("privilege")
             instance_name = data.get("instance")
-            print(instance_name)
             community = get_object_or_404(Community, name=instance_name)
 
-            if privilege == "Owner":
+            try:
+                owner = Moderators.objects.get(is_owner=True, user_id=request.user.id)
+                is_owner = Moderators.objects.filter(user=request.user, user__username=owner).exists()
+            except Moderators.DoesNotExist:
+                is_owner = False
+
+            try:
+                admin = Moderators.objects.get(is_admin=True, user_id=request.user.id)
+                is_admin = Moderators.objects.filter(user=request.user, user__username=admin).exists()
+            except Moderators.DoesNotExist:
+                is_admin = False
+
+            if privilege == "Owner" and is_owner:
                 ...
-            elif privilege == "Admin":
+            elif privilege == "Admin" and is_owner:
                 admin, created = Moderators.objects.get_or_create(user_id=user_id, is_admin=True)
                 if not community.admins.filter(id=admin.id, is_admin=True).exists():
                     admin.is_admin = True
                     admin.save()
                     community.admins.add(admin)
 
-            elif privilege == "Moderator":
+            elif privilege == "Moderator" and (is_owner or is_admin):
                 moderator, created = Moderators.objects.get_or_create(user_id=user_id, is_moderator=True)
                 if not community.admins.filter(id=moderator.id, is_admin=True).exists():
                     moderator.is_moderator = True

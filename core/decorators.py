@@ -6,7 +6,7 @@ from users.models import Moderators
 def owner_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        owner = get_object_or_404(Moderators, is_owner=True)
+        owner = get_object_or_404(Moderators, is_owner=True, user_id=request.user.id)
         is_owner = Moderators.objects.filter(user=request.user, user__username=owner).exists()
 
         if is_owner:

@@ -316,7 +316,7 @@ class AdminPanelView(ViewWitsContext):
         instance = get_object_or_404(Community, name=self.kwargs["name"])
 
         # COMMUNITY MANAGERS DATA
-        context["owner"] = get_object_or_404(Moderators, is_owner=True)
+        context["owner"] = get_object_or_404(Moderators, is_owner=True, user_id=request.user.id)
         context["admins"] = Moderators.objects.filter(is_admin=True)
         context["moderators"] = Moderators.objects.filter(is_moderator=True)
 

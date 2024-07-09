@@ -5,37 +5,14 @@
     <title>Title</title>
 </head>
 <body>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<script src="https://malsup.github.io/jquery.form.js"></script>
-<script>
-    $(document).ready(function () {
-        $('#feedbackForm').submit(function (event) {
-            event.preventDefault();
-            var formData = $(this).serialize();
-            formData += '&csrfmiddlewaretoken={{ csrf_token }}';
-            $.ajax({
-                type: 'POST',
-                url: $(this).attr('action'),
-                data: formData,
-                success: function (response) {
-                    $('#feedback-container').html(response.feedback_html);
 
-                },
-                error: function (xhr, status, error) {
-                    console.error(error);
-                }
-            });
-        });
 
-    });
-</script>
-
-<form method="get">
+<form method="GET">
     {% if request.user.is_authenticated and request.user == model_detail.author %}
         <input type="submit" value="Edit" name="edit">
     {% endif %}
     {% for context in model_class %}
-        <h1>{{ context.title }} | {{ context.author }} | {{ context.created }}</h1>
+        <h1>{{ context.title }} | {{ context.author }}</h1>
         {{ context.context }}
         {% if context.image %}
             {{ context.image }}
@@ -46,12 +23,9 @@
     {% endfor %}
 </form>
 
-<form id="feedbackForm" action="/post-comments-t/{{ model_detail.id }}/{{ content_type.id }}/" method="POST">
-    <div id="feedback-container">
-        {% csrf_token %}
-        {% include 'threads/threads_detail/answers.html' %}
-    </div>
-    <br>
-</form>
+
+{% include 'main_page/answers.html' with comments=comments content_type_id=content_type.id object_id=object_id%}
+
+
 </body>
 </html>

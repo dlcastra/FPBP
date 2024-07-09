@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        .card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 40%;
+        }
+    </style>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script defer src="{% static 'community_privileges.js' %}"></script>
+</head>
+<body>
+<h2>All admins</h2>
+{% if admins.exists %}
+    {% for admin in admins %}
+        <div class="card">
+            <p><strong>Id:</strong> {{ admin.id }}</p>
+            <p><strong>Username:</strong> {{ admin.user.username }}</p>
+            <p><strong>Name:</strong> {{ admin.user.first_name }}</p>
+            <p><strong>Surname:</strong> {{ admin.user.last_name }}</p>
+            <form class="removePrivilege" data-action="remove_privileges" method="post">
+                <input type="submit" name="remove_privileges" value="Remove"
+                       data-manager-id="{{ admin.id }}"
+                       data-action="remove_privileges"
+                       data-instance="{{ instance }}"
+                >
+                {% csrf_token %}
+            </form>
+        </div>
+    {% endfor %}
+{% else %}
+    {{ admins }}
+{% endif %}
+<h2>All moderators</h2>
+{% if moderators.exists %}
+    {% for moder in moderators %}
+        <div class="card">
+            <p><strong>Id:</strong> {{ moder.id }}</p>
+            <p><strong>Username:</strong> {{ moder.user.username }}</p>
+            <p><strong>Name:</strong> {{ moder.user.first_name }}</p>
+            <p><strong>Surname:</strong> {{ moder.user.last_name }}</p>
+            <form class="removePrivilege" data-action="remove_privileges" method="post">
+                <input type="submit" name="remove_privileges" value="Remove"
+                       data-manager-id="{{ moder.id }}"
+                       data-action="remove_privileges"
+                       data-instance="{{ instance }}"
+                >
+                {% csrf_token %}
+            </form>
+
+        </div>
+    {% endfor %}
+{% else %}
+    {{ moderators }}
+{% endif %}
+</body>
+</html>

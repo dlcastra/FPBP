@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <meta charset="UTF-8">
+    <title>Real-time Comments</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script defer src="{% static 'comments.js' %}"></script>
+    <style>
+        .scrollable-text {
+            margin: 10px;
+            max-height: 420px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .scrollable-text::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .scrollable-text::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+
+        .scrollable-text::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .scrollable-text::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+
+        .scrollable-text::-webkit-scrollbar-thumb {
+            margin-right: 2px;
+        }
+    </style>
+
+</head>
+<body>
+{% if request.user.is_authenticated %}
+    <form id="commentForm_{{ object_id }}{{ content_type_id }}" class="commentForm">
+
+        <textarea id="content_{{ object_id }}{{ content_type_id }}"
+                  placeholder=" Add feedback here (max. 255 characters)" maxlength="255"
+                  style="width: 100%; max-width: 750px; height: 100px; max-height: 150px; vertical-align: top; resize: none; border-radius: 15px;"
+                  required></textarea><br>
+        <input type="hidden" id="user_id_{{ object_id }}{{ content_type_id }}" value="{{ request.user.id }}">
+        <input type="hidden" id="content_type_id_{{ object_id }}{{ content_type_id }}"
+               value="{{ content_type_id }}"><br>
+        <input type="hidden" id="object_id_{{ object_id }}{{ content_type_id }}" value="{{ object_id }}"><br>
+        <input type="file" id="file_{{ object_id }}{{ content_type_id }}" accept=".txt,.pdf,.docx">
+        <input type="hidden"
+               id="username_id_{{ object_id }}{{ content_type_id }}"
+               value="{{ request.user.username }}">
+        <input type="file" id="image_{{ object_id }}{{ content_type_id }}" accept="image/*"><br>
+        <button class="btn btn-success" type="submit">Send Comment</button>
+    </form>
+{% else %}
+    <p>You need to be logged in to send a comment.</p>
+{% endif %}
+<div class="scrollable-text" id="comments_{{ object_id }}{{ content_type_id }}"
+     style="overflow-y: scroll; height: 300px;">
+    {% if comments %}
+        {% for content in comments %}
+            <div class="feedback" data-feedback-id="{{ content.id }}">
+                <h5>User: {{ content.user.username }}</h5>
+                <span class="feedback-text">{{ content.context }}</span>
+                <br><br>
+            </div>
+        {% endfor %}
+    {% else %}
+        There are no feedbacks yet.<br>
+    {% endif %}
+</div>
+
+</body>
+</html>

@@ -4,9 +4,8 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import TemplateView, View, DetailView
 from abc import ABC, abstractmethod
 
-from app.helpers import data_handler, post_request_details
+from core.helpers import post_request_details
 from app.models import Comments
-from users.models import CustomUser
 
 
 class RenderOrRedirect(ABC, TemplateView):
@@ -24,60 +23,18 @@ class RenderOrRedirect(ABC, TemplateView):
         return render(request, self.template_name)
 
 
-class CommentsHandlerMixin(ABC, View):
-
-    @abstractmethod
-    def get_model_class(self):
-        """
-        Must be implemented to return the model class (Thread or Publications).
-        """
-        pass
-
-    @abstractmethod
-    def get_template(self):
-        """
-        Must be implemented to return the model class (Thread or Publications).
-        """
-        pass
-
-    def get_context_data(self, request, **kwargs):
-        pk = self.kwargs.get("pk")
-        model_pk = self.kwargs.get("content_type_id")
-        get_data = data_handler(request, pk, self.get_template(), model_pk)
-        user_id = get_data["user_id"]
-        model_class = self.get_model_class()
-        instance = get_object_or_404(model_class, pk=pk)
-
-        context = {"user_id": user_id, "instance": instance, "model_class": model_class, "pk": pk, "model_pk": model_pk}
-        return context
-
-    def post(self, request, *args, **kwargs):
-        context = self.get_context_data(request, **kwargs)
-        instance = context["instance"]
-
-        if instance:
-            content = request.POST.get("feedback")
-            try:
-                user = CustomUser.objects.get(id=context["user_id"])
-                content_type = ContentType.objects.get_for_model(instance.__class__)
-                Comments.objects.create(
-                    user=user,
-                    title=instance.title,
-                    context=content,
-                    content_type=content_type,
-                    object_id=context.get("pk"),
-                )
-                return JsonResponse(data_handler(request, context["pk"], self.get_template(), context["model_pk"]))
-            except CustomUser.DoesNotExist:
-                return JsonResponse({"message": "User not found"}, status=404)
-            except Exception as e:
-                return JsonResponse({"message": str(e)}, status=500)
-
-        return JsonResponse({"message": "Invalid request"}, status=400)
-
-
 class RemoveCommentsMixin(ABC, View):
     def remove_comment(self, request, *args, **kwargs):
+        """
+        Remove comments from publication
+
+        :param request: POST request
+        :param args: Additional arguments.
+        :param kwargs: Get answer_id (int) from URL path
+        :return: HTTP or JSON response
+            - If answer deleted with success: HTTP response status code is 204
+            - If answer does not exist: JSON response {"error": "Comments does not exist"} and status code is 404
+        """
         answer_id = self.kwargs.get("answer_id")
         try:
             answer = Comments.objects.get(id=answer_id)
@@ -118,44 +75,76 @@ class DetailMixin(ABC, DetailView):
         pass
 
     def get_context_data(self, request, **kwargs):
+        """
+        :param request: GET and POST requests
+        :param kwargs: get object 'pk' from URL
+        :return: Dictionary context data for rendering object detail
+            - user (str): Return username
+            - model_class (list): Return model class by 'pk'
+            - model_detail (dict): Return model data by 'pk'
+            - comments (list): Returns comments that belong to the object, filtering them by 'pk' and 'content_type'
+            - content_type (str): Determines which model this comments belongs
+            - object_id (int): Return object id taken from URL as 'pk'
+        """
         user = request.user
         pk = self.kwargs.get("pk")
         model_class = self.get_model_class().objects.filter(pk=pk).all()
         content_type = ContentType.objects.get_for_model(self.get_model_class())
         model_detail = get_object_or_404(self.get_model_class(), pk=pk)
         comments = Comments.objects.filter(object_id=pk, content_type=content_type).all()
-        model_pk = self.get_model_class().objects.filter(pk=pk).all()[0].id
-        get_context = data_handler(request, pk, self.get_comments_template(), model_pk)
-        get_context["model_detail"] = model_detail
         context = {
             "user": user,
             "model_class": model_class,
             "model_detail": model_detail,
             "comments": comments,
-            "get_context": get_context,
             "content_type": content_type,
+            "object_id": pk,
         }
 
         return context
 
     def get_object(self, queryset=None):
+        # Return object instance
         pk = self.kwargs.get("pk")
         return get_object_or_404(self.get_model_class(), pk=pk)
 
     def get(self, request, *args, **kwargs):
+        """
+        Displays the main template or template for the object being edited.
+        Verifies that the user is authenticated and that the user is the author of the publication.
+
+        :param request: HTTP request object that can include '?edit' parameter or None
+        :param args: Additional arguments.
+        :param kwargs: Taken object 'pk' from URL for 'model_detail'
+        :return: Render template with context data
+            - If request param is 'edit' and user is valid: Render edit template with dictionary context data
+            - If request param is None: Render main template with object details
+        """
         context = self.get_context_data(request, **kwargs)
         template = self.render_main_template()
         user_checker = request.user.is_authenticated and request.user.id == context["model_detail"].author_id
 
-        if "edit" in request.GET and user_checker:
-            edit_template = self.render_edit_template()
-            form_class = self.get_form_class()
-            form = form_class(instance=self.get_object())
-            return render(request, edit_template, {"form": form, **context})
+        # if "edit" in request.GET and user_checker:
+        #     edit_template = self.render_edit_template()
+        #     form_class = self.get_form_class()
+        #     form = form_class(instance=self.get_object())
+        #     return render(request, edit_template, {"form": form, **context})
 
         return render(request, template, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Places the data into a function that checks the validity of the data then:
+            - If the data is valid, the user is transferred to the given URL
+            - For else cases must be displayed error message
+
+        :param request: POST request with object data
+        :param args: Additional arguments
+        :param kwargs: Additional position arguments.
+        :return: Redirect to the given URL or render template with context data:
+            - If form is valid: Redirect to the given
+            - If form is invalid: Return error message
+        """
         form_class = self.get_form_class()
         form = form_class(request.POST, request.FILES, instance=self.get_object())
         redirect_response = post_request_details(request, form, self.get_redirect_url())
@@ -166,3 +155,21 @@ class DetailMixin(ABC, DetailView):
         context = self.get_context_data(request, **kwargs)
         context["form"] = form
         return render(request, self.render_main_template(), context)
+
+
+class ViewWitsContext(View):
+    def get_context_data(self, request, **kwargs):
+        context = {}
+        return context
+
+
+class BlackListMixin(ABC, ViewWitsContext):
+    @property
+    @abstractmethod
+    def get_model_class(self):
+        pass
+
+    @property
+    @abstractmethod
+    def get_model_class_form(self):
+        pass

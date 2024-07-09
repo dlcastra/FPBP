@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView
 
-from app.mixins import CommentsHandlerMixin, RemoveCommentsMixin, DetailMixin
+from core.mixins import RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
 from .models import CustomUser, Followers, Publication
 
@@ -21,6 +21,15 @@ class CustomUserChangeView(LoginRequiredMixin, View):
     success_url = "/change-data/"
 
     def get(self, request):
+        """
+        Displays a page for editing user data
+
+        :param request: GET request
+        :return: Render template with dictionary context data:
+            - form (form_class): CustomUserChangeForm instance
+            - connections (list): List of user connection social accounts
+            - connected_provider_ids (list[int]): List of provider ids
+        """
         form = self.form_class(instance=request.user)
         connections = SocialAccount.objects.filter(user_id=request.user.id)
         connected_provider_ids = connections.values_list("provider", flat=True)
@@ -43,6 +52,20 @@ class CustomUserChangeView(LoginRequiredMixin, View):
                 self.template_name,
                 {"form": form, "connections": connections, "connected_provider_ids": connected_provider_ids},
             )
+
+
+class FollowersListView(ListView):
+    template_name = "account/followers_list.html"
+
+    def get_queryset(self):
+        return Followers.objects.filter(user__username=self.kwargs["username"], is_follow=True)
+
+
+class FollowingsListView(ListView):
+    template_name = "account/followings_list.html"
+
+    def get_queryset(self):
+        return Followers.objects.filter(following__username=self.kwargs["username"], is_follow=True)
 
 
 # ------------------------ Disconnect Account func ------------------------
@@ -70,6 +93,14 @@ class UserPageView(LoginRequiredMixin, View):
     template_name = "account/user_page.html"
 
     def get_context_data(self, request, **kwargs):
+        """
+        :return: Dictionary context data:
+            - user (instance)
+            - followers_count (int)
+            - followings_count (int)
+            - publication (list): List of user publications
+            - is_following (list): List of user followings
+        """
         username = self.kwargs.get("username")
         user = CustomUser.objects.get(username=username)
         user.followers_count = Followers.objects.filter(user=user, is_follow=True).count()
@@ -92,6 +123,17 @@ class UserPageView(LoginRequiredMixin, View):
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
+        """
+        Responsible for handling the user subscription system
+
+        :param request: HTTP request object that can include 'XMLHttpRequest' from headers
+        :param args: Additional arguments
+        :param kwargs: Get 'username' from URL path
+
+        :return: JsonResponse or Render template with context:
+            - If following end with success: Return JsonResponse with followers_count (int) and is_following (bool)
+            - For else: Render template with context
+        """
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             username = self.kwargs.get("username")
             user = CustomUser.objects.get(username=username)
@@ -157,18 +199,10 @@ class PublicationDetailView(DetailMixin, View):
         return f"/publication/{self.kwargs['pk']}"
 
     def get_comments_template(self):
-        return "publications/publication_detail/answers.html"
+        return "main_page/answers.html"
 
 
 # ------------------------ COMMENTS SECTION ------------------------
-
-
-class PublicationCommentsHandlerView(CommentsHandlerMixin, View):
-    def get_model_class(self):
-        return Publication
-
-    def get_template(self):
-        return "publications/publication_detail/answers.html"
 
 
 class RemoveCommentPublication(RemoveCommentsMixin, View):

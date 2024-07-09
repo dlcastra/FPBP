@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Admin panel</h1>
+{#<p>Followers: {{ followers }}</p><br>#}
+<form method="get">
+    <input type="submit" name="followers_list" value="Followers">
+</form>
+<br>
+
+<p>Owner: {{ owner }}</p>
+<p><a href="{% url 'users_management' name=instance %}?managers_list">Admins and moderators</a></p>
+<p>Posts counter: {{ all_posts.count }}</p>
+{% for post in all_posts %}
+    <p>Post ID:{{ post.id }} | Title: {{ post.title }}</p>
+{% endfor %}
+
+<form method="get">
+    <input type="submit" name="edit" value="edit">
+    
+</form>
+</body>
+</html>

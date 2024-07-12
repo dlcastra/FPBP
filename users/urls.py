@@ -12,6 +12,8 @@ urlpatterns = [
     path("user-page/<username>/followers/", views.FollowersListView.as_view(), name="user_followers"),
     path("user-page/<username>/followings/", views.FollowingsListView.as_view(), name="user_followings"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
+    ######################### Chat Urls #################################
+    path("user-page/<username>/chat/", views.ConversationView.as_view(), name="conversation"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
     path("publication/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),

@@ -3,5 +3,6 @@ from . import consumers
 
 websocket_urlpatterns = [
     re_path(r"ws/notify/$", consumers.NotificationConsumer.as_asgi()),
-    re_path(r"ws/(?P<group_name>\w+)/$", consumers.CommentsConsumer.as_asgi()),
+    re_path(r"ws/comments/$", consumers.CommentsConsumer.as_asgi()),
+    re_path(r"ws/message/$", consumers.ChatConsumer.as_asgi()),
 ]

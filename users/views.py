@@ -2,14 +2,13 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView
-
 from core.mixins import RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
-from .models import CustomUser, Followers, Publication
+from .models import CustomUser, Followers, Publication, Chat
 
 
 # ------------------------ Users Form ------------------------
@@ -120,6 +119,11 @@ class UserPageView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
+        if request.GET.get("create_chat"):
+            recipient = CustomUser.objects.get(username=self.kwargs.get("username"))
+            chat = Chat.objects.create(sender_id=request.user.id, recipient_id=recipient.id)
+            chat.save()
+            return redirect("chat/")
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -208,3 +212,37 @@ class PublicationDetailView(DetailMixin, View):
 class RemoveCommentPublication(RemoveCommentsMixin, View):
     def post(self, request, *args, **kwargs):
         return self.remove_comment(request, *args, **kwargs)
+
+
+# ------------------------ Chat Section ---------------------------
+
+
+class ConversationView(View):
+    model = Chat
+    template_name = "conversations/chat.html"
+
+    def get_context_data(self, request, **kwargs):
+        recipient = self.kwargs.get("username")
+        sender = request.user.username
+        chat = self.model.objects.get(sender__username=sender, recipient__username=recipient)
+        context = {
+            "recipient": recipient,
+            "sender": sender,
+            "chat": chat,
+        }
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        chat = context.get("chat")
+        if chat:
+            return render(
+                request,
+                self.template_name,
+                {"chat": chat, "recipient": context["recipient"], "sender": context["sender"]},
+            )
+        else:
+            return HttpResponse(
+                "Chat not found",
+                status=404,
+            )

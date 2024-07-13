@@ -262,3 +262,11 @@ class ConversationView(View):
                 "Chat not found",
                 status=404,
             )
+
+
+class ChatList(ListView):
+    model = Chat
+    template_name = "conversations/chat_list.html"
+
+    def get_queryset(self):
+        return Chat.objects.filter(Q(sender=self.request.user) | Q(recipient=self.request.user))

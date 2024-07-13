@@ -1,9 +1,10 @@
-from django.urls import path, include, re_path
-from users import views
-from allauth.socialaccount import views as socialaccount_views
 from allauth.account import views as account_views
 from allauth.mfa import urls as mfa_urls
 from allauth.mfa import views as mfa_views
+from allauth.socialaccount import views as socialaccount_views
+from django.urls import path, include, re_path
+
+from users import views
 
 urlpatterns = [
     ############################# User Urls #############################
@@ -13,6 +14,7 @@ urlpatterns = [
     path("user-page/<username>/followings/", views.FollowingsListView.as_view(), name="user_followings"),
     path("change-data/", views.CustomUserChangeView.as_view(), name="socialaccount_connections"),
     ######################### Chat Urls #################################
+    path("user-chats/", views.ChatList.as_view(), name="user-chats"),
     path("user-page/<username>/chat/", views.ConversationView.as_view(), name="conversation"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),

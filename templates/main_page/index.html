@@ -74,6 +74,7 @@
             <a href="/signup/">Sign Up</a>
         {% else %}
             <a href="/logout/">Sign Out</a>
+            <a href="/user-chats/">Chats</a>
         {% endif %}
         {% if request.user.is_authenticated %}
             <li><a href="/user-page/{{ request.user.username }}">Profile</a></li>

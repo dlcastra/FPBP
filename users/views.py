@@ -2,6 +2,7 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.views import View
@@ -121,8 +122,13 @@ class UserPageView(LoginRequiredMixin, View):
         context = self.get_context_data(request, **kwargs)
         if request.GET.get("create_chat"):
             recipient = CustomUser.objects.get(username=self.kwargs.get("username"))
-            chat = Chat.objects.create(sender_id=request.user.id, recipient_id=recipient.id)
-            chat.save()
+            try:
+                Chat.objects.get(
+                    Q(sender_id=request.user.id, recipient_id=recipient.id)
+                    | Q(sender_id=recipient.id, recipient_id=request.user.id)
+                )
+            except Chat.DoesNotExist:
+                Chat.objects.create(sender_id=request.user.id, recipient_id=recipient.id)
             return redirect("chat/")
         return render(request, self.template_name, context)
 
@@ -224,11 +230,16 @@ class ConversationView(View):
     def get_context_data(self, request, **kwargs):
         recipient = self.kwargs.get("username")
         sender = request.user.username
-        chat = self.model.objects.get(sender__username=sender, recipient__username=recipient)
+        chat = self.model.objects.get(
+            Q(sender__username=request.user.username, recipient__username=recipient)
+            | Q(sender__username=recipient, recipient__username=request.user.username)
+        )
+        messages = chat.message.filter().all()
         context = {
             "recipient": recipient,
             "sender": sender,
             "chat": chat,
+            "messages": messages,
         }
         return context
 
@@ -239,7 +250,12 @@ class ConversationView(View):
             return render(
                 request,
                 self.template_name,
-                {"chat": chat, "recipient": context["recipient"], "sender": context["sender"]},
+                {
+                    "chat": chat,
+                    "recipient": context["recipient"],
+                    "sender": context["sender"],
+                    "messages": context["messages"],
+                },
             )
         else:
             return HttpResponse(

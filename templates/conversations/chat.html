@@ -5,13 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Chat</title>
+    <link rel="stylesheet" href="{% static 'styles/chat.css' %}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script defer src="{% static 'chat.js' %}"></script>
 </head>
 <body>
 <div id="chat-container-{{ chat.id }}" class="chat-container">
-
-
+    <div class="message-container" id="message_container_{{ chat.id }}">
+        {% for message in messages %}
+            <div class="message {% if message.user.id == request.user.id %}sent{% else %}received{% endif %}">
+                <h5>{{ message.user.username }}</h5>
+                <p>{{ message.context }}</p>
+            </div>
+        {% endfor %}
+    </div>
     <form class="messageForm" data-chat-id="{{ chat.id }}">
         <input type="hidden" id="chat_id_{{ chat.id }}" value="{{ chat.id }}">
         <input type="hidden" id="user_id_{{ chat.id }}" value="{{ request.user.id }}">
@@ -23,9 +30,6 @@
         <input type="file" id="voice_{{ chat.id }}" accept="audio/*"><br>
         <button type="submit">Send</button>
     </form>
-</div>
-<div id="message_container" class="message-container">
-    <!-- Messages will be appended here -->
 </div>
 </body>
 </html>

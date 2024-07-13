@@ -1,5 +1,4 @@
 $(document).ready(function () {
-
     const socket = new WebSocket(`ws://${window.location.host}/ws/message/`);
 
     socket.onopen = function () {
@@ -47,7 +46,7 @@ $(document).ready(function () {
         const voiceBase64 = voiceInput.files[0] ? await fileToBase64(voiceInput.files[0]) : null;
 
         const message = {
-            username: username,
+            username: $('#username').val(),
             user_id: userId,
             recipient: recipient,
             sender: sender,
@@ -79,21 +78,22 @@ $(document).ready(function () {
             return;
         }
 
-        const messageDiv = $(`#message_container`);
+        const messageDiv = $(`#message_container_${message.chatId}`);
 
         if (messageDiv.length === 0) {
             console.error("Message container not found for chat ID:", message.chatId);
             return;
         }
 
+        const messageClass = message.user_id == $('#user_id_' + message.chatId).val() ? 'sent' : 'received';
         const commentElement = $(`
-                <div class="chat-message" data-feedback-id="${message.id}">
-                    <h5>User: ${message.username}</h5>
-                    <span class="feedback-text">${message.context}</span>
-                    <br><br>
-                </div>
-            `);
-
+            <div class="message ${messageClass}">
+                <h5>${message.username}</h5>
+                <p>${message.context}</p>
+                ${message.file ? `<img src="${message.file}" alt="Image"/>` : ''}
+                ${message.voice ? `<audio controls src="${message.voice}"></audio>` : ''}
+            </div>
+        `);
 
         messageDiv.append(commentElement);
         messageDiv.scrollTop(messageDiv.prop("scrollHeight"));

@@ -71,7 +71,7 @@ $(document).ready(function () {
         const messageDiv = $(`#message_container_${message.chatId}`);
 
 
-        const messageClass = (message.user_id === $('#user_id_' + message.chatId).val()) ? 'sent' : 'received';
+        const messageClass = (message.userId === message.sender) ? 'sent' : 'received';
         const commentElement = $(`
             <div class="message ${messageClass}">
                 <h5>${message.username}</h5>

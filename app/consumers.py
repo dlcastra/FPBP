@@ -31,7 +31,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
 class CommentsConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "public_room"
+        self.group_name = "comments_room"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         logger.info("WebSocket connected")

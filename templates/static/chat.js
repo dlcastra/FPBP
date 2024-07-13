@@ -29,19 +29,12 @@ $(document).ready(function () {
         const fileInput = $(`#file_${chatId}`)[0];
         const voiceInput = $(`#voice_${chatId}`)[0];
 
-        // Log file input data to ensure it's being accessed correctly
-        console.log('File Input:', fileInput.files[0]);
-        console.log('Voice Input:', voiceInput.files[0]);
 
-        // Check if required fields are present
         if (!chatId || !userId || !recipient || !sender || !context) {
-            console.error("Missing required fields:", {
-                chatId, userId, recipient, sender, context
-            });
+            console.error("Missing required fields:", {chatId, userId, recipient, sender, context});
             return;
         }
 
-        // Handle files and convert to base64 if present
         const fileBase64 = fileInput.files[0] ? await fileToBase64(fileInput.files[0]) : null;
         const voiceBase64 = voiceInput.files[0] ? await fileToBase64(voiceInput.files[0]) : null;
 
@@ -56,12 +49,10 @@ $(document).ready(function () {
             voice: voiceBase64,
         };
 
-        console.log("Sending message:", message);
         socket.send(JSON.stringify(message));
         form[0].reset();
     });
 
-    // Convert file to Base64
     async function fileToBase64(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -71,7 +62,6 @@ $(document).ready(function () {
         });
     }
 
-    // Display message in the UI
     function displayMessage(message) {
         if (!message || !message.context) {
             console.error("Invalid message data", message);
@@ -80,12 +70,8 @@ $(document).ready(function () {
 
         const messageDiv = $(`#message_container_${message.chatId}`);
 
-        if (messageDiv.length === 0) {
-            console.error("Message container not found for chat ID:", message.chatId);
-            return;
-        }
 
-        const messageClass = message.user_id == $('#user_id_' + message.chatId).val() ? 'sent' : 'received';
+        const messageClass = (message.user_id === $('#user_id_' + message.chatId).val()) ? 'sent' : 'received';
         const commentElement = $(`
             <div class="message ${messageClass}">
                 <h5>${message.username}</h5>

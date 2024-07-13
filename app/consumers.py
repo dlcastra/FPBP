@@ -112,6 +112,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         logger.info(f"Received data: {data}")
         chat_id = data.get("chatId")
+        recipient = data.get("recipient")
         user_id = data.get("user_id")
         context = data.get("context")
         attachment = data.get("attachment")
@@ -152,10 +153,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "chatId": chat_id,
             },
         }
-
-        # Creating or updating notification
-        notif, created = await sync_to_async(Notification.objects.get_or_create)(user=chat.recipient)
-        message_counter = await sync_to_async(chat.message.filter(user=chat.recipient).count)()
+        notif, created = await sync_to_async(Notification.objects.get_or_create)(user_id=recipient)
+        message_counter = await sync_to_async(chat.message.filter(user_id=recipient).count)()
 
         if created:
             notif.message = f"You got a new message {message_counter}"
@@ -170,12 +169,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             response["attachment_url"] = message.attachment.url
 
         await self.channel_layer.group_send(self.group_name, response)
-        notification_event = {
-            "type": "send_notification",
-            "message": notif.message,
-            "id": notif.id,
-        }
-        await self.channel_layer.group_send("notification_room", notification_event)
+        # notification_event = {
+        #     "type": "send_notification",
+        #     "message": notif.message,
+        #     "id": notif.id,
+        # }
+        # await self.channel_layer.group_send("notification_room", notification_event)
 
     async def send_message(self, event):
         await self.send(text_data=json.dumps(event))

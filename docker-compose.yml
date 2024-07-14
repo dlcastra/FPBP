@@ -1,0 +1,31 @@
+version: '3.9'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["sh", "/usr/src/FPBP/entrypoint.sh"]
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file:
+      - .env
+
+  db:
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env

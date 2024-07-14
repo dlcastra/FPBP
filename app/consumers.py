@@ -1,13 +1,9 @@
 import json
+import logging
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-import logging
 from django.utils.safestring import mark_safe
-
-from users.models import Chat
-from app.models import Comments, Notification
-from users.models import CustomUser
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +26,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
 
 class CommentsConsumer(AsyncWebsocketConsumer):
+
     async def connect(self):
+
         self.group_name = "comments_room"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
@@ -42,6 +40,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
         logger.info(f"WebSocket disconnected from group: {self.group_name}")
 
     async def receive(self, text_data=None, bytes_data=None):
+        from app.models import Comments
 
         data = json.loads(text_data)
         logger.debug(f"Received data: {data}")
@@ -109,6 +108,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         logger.info(f"WebSocket disconnected from group: {self.group_name}")
 
     async def receive(self, text_data=None, bytes_data=None):
+        from users.models import Chat, CustomUser
+
         data = json.loads(text_data)
         logger.info(f"Received data: {data}")
         chat_id = data.get("chatId")

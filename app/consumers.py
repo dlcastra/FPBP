@@ -109,6 +109,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         from users.models import Chat, CustomUser
+        from app.models import Notification
 
         data = json.loads(text_data)
         logger.info(f"Received data: {data}")

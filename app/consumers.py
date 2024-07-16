@@ -98,7 +98,7 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "public_room"
+        self.group_name = "chat_room"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         logger.info("WebSocket connected")
@@ -171,12 +171,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             response["attachment_url"] = message.attachment.url
 
         await self.channel_layer.group_send(self.group_name, response)
-        # notification_event = {
-        #     "type": "send_notification",
-        #     "message": notif.message,
-        #     "id": notif.id,
-        # }
-        # await self.channel_layer.group_send("notification_room", notification_event)
+        notification_event = {
+            "type": "send_notification",
+            "message": notif.message,
+            "id": notif.id,
+        }
+        await self.channel_layer.group_send("notification_room", notification_event)
 
     async def send_message(self, event):
         await self.send(text_data=json.dumps(event))

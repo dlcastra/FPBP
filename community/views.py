@@ -216,7 +216,12 @@ class CommunityView(ViewWitsContext):
                 f"There is your new follow request: {request_obj.user.username}\n"
                 f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
             )
-            Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
+            Notification.objects.create(
+                user=community.admins.get(is_owner=True).user,
+                message=message,
+                content_type=ContentType.objects.get_for_model(Community),
+                object_id=community.id,
+            )
 
             request_obj.send_status = True
         request_obj.save()

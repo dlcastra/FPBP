@@ -116,3 +116,17 @@ class Chat(models.Model):
 
     def __str__(self):
         return self.chat_name
+
+
+class ChatBlackList(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_black_list")
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="chat_black_list")
+
+    class Meta:
+        unique_together = (("user", "chat"),)
+        ordering = ("chat",)
+
+
+class ChatSettings(models.Model):
+    block_list = models.ManyToManyField(ChatBlackList, related_name="chat_black_list")
+    mute = models.BooleanField(default=False)

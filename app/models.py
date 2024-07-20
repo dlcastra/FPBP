@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+
 from users.models import CustomUser
 
 
@@ -70,6 +71,9 @@ class SubSection(models.Model):
 class Notification(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="notifications")
     message = models.CharField(max_length=500)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, default="")
+    object_id = models.PositiveIntegerField(default=0)
+    content_object = GenericForeignKey("content_type", "object_id")
 
     def __str__(self):
         return self.message

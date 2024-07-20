@@ -3,6 +3,7 @@ import logging
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.contenttypes.models import ContentType
 from django.utils.safestring import mark_safe
 
 logger = logging.getLogger(__name__)
@@ -155,7 +156,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "chatId": chat_id,
             },
         }
-        notif, created = await sync_to_async(Notification.objects.get_or_create)(user_id=recipient)
+        chat_content = await sync_to_async(ContentType.objects.get_for_model)(
+            Chat,
+        )
+        notif, created = await sync_to_async(Notification.objects.get_or_create)(
+            user_id=recipient,
+            content_type=chat_content,
+            object_id=chat.id,
+        )
         message_counter = await sync_to_async(chat.message.filter(user_id=recipient).count)()
 
         if created:

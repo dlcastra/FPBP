@@ -11,6 +11,10 @@
 </head>
 <body>
 <div id="chat-container-{{ chat.id }}" class="chat-container">
+    <form action="settings/" method="GET">
+
+        <button type="submit" value="settings" name="Settings">Settings</button>
+    </form>
     <div class="message-container" id="message_container_{{ chat.id }}">
         {% for message in messages %}
             <div class="message {% if message.user.id == request.user.id %}sent{% else %}received{% endif %}">
@@ -19,6 +23,7 @@
             </div>
         {% endfor %}
     </div>
+    {% if not_allowed == false %}
     <form class="messageForm" data-chat-id="{{ chat.id }}">
         <input type="hidden" id="chat_id_{{ chat.id }}" value="{{ chat.id }}">
         <input type="hidden" id="user_id_{{ chat.id }}" value="{{ request.user.id }}">
@@ -30,6 +35,9 @@
         <input type="file" id="voice_{{ chat.id }}" accept="audio/*"><br>
         <button type="submit">Send</button>
     </form>
+    {% else %}
+        <label> You cannot send message to this user</label>
+    {% endif %}
 </div>
 </body>
 </html>

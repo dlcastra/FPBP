@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -321,7 +322,9 @@ class AdminPanelView(ViewWitsContext):
         context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers_count"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
         context["owner"] = instance.admins.get(is_owner=True)
-        # context["last_actions"] = ...
+        now = datetime.now()
+        time_48_hours_ago = now - timedelta(hours=48)
+        context["last_actions"] = instance.posts.filter(published_at__range=[time_48_hours_ago, now])
 
         # GET COMMUNITY PUBLICATIONS
         owner = instance.admins.filter(is_owner=True).first()

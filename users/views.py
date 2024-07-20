@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -285,6 +285,11 @@ class ChatSettings(View):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
+        chat = context.get("chat")
+        user = context.get("user")
+        is_blocked = ChatBlackList.objects.filter(chat=chat, user=user).exists()
+        block_btn_value = "Unblock user" if is_blocked else "Block user"
+        context["block_btn_value"] = block_btn_value
         return render(request, self.template_name, context)
 
     @method_decorator(csrf_exempt)
@@ -298,11 +303,13 @@ class ChatSettings(View):
         if action == "block_user":
             bl_list, created = ChatBlackList.objects.get_or_create(user=user, chat_id=chat.id)
             bl_list.save()
+            context["block_btn_value"] = "Unblock user"
             response = {"status": "success", "action": "blocked"}
         elif action == "unblock_user":
             bl_list = ChatBlackList.objects.filter(user=user, chat_id=chat.id).first()
             if bl_list:
                 bl_list.delete()
+                context["block_btn_value"] = "Block user"
                 response = {"status": "success", "action": "unblocked"}
             else:
                 response = {"status": "error", "message": "Not found"}

@@ -1,0 +1,16 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script defer src="{% static 'chat_settings.js' %}"></script>
+<body>
+<h1>Settings</h1><br>
+<label>{{ user.username }}
+</label>
+<button id="block_user_btn" type="button" data-action="block_user">{{ block_btn_value }}</button>
+</body>
+</html>

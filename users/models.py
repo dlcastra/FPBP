@@ -95,3 +95,38 @@ class Moderators(models.Model):
 
     def __str__(self):
         return f"{self.user}"
+
+
+class Message(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    context = models.TextField()
+    attachment = models.FileField(upload_to="attachments", default=None)
+    voice = models.FileField(upload_to="voice", default=None)
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("date_added",)
+
+
+class Chat(models.Model):
+    chat_name = models.TextField(default="")
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="sender")
+    recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="recipient")
+    message = models.ManyToManyField(Message, related_name="messages")
+
+    def __str__(self):
+        return self.chat_name
+
+
+class ChatBlackList(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="chat_black_list")
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="chat_black_list")
+
+    class Meta:
+        unique_together = (("user", "chat"),)
+        ordering = ("chat",)
+
+
+class ChatSettings(models.Model):
+    block_list = models.ManyToManyField(ChatBlackList, related_name="chat_black_list")
+    mute = models.BooleanField(default=False)

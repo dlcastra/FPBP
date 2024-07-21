@@ -13,8 +13,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 
-from django.contrib.messages import api
 from decouple import config
+from django.contrib.messages import api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "API.apps.ApiConfig",
     "phonenumber_field",
+    "community.apps.CommunityConfig",
     # DJANGO BASE
     "django.contrib.admin",
     "django.contrib.auth",
@@ -57,8 +58,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "allauth.socialaccount.providers.github",
-    "community.apps.CommunityConfig",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -94,8 +95,12 @@ ASGI_APPLICATION = "core.asgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 CHANNEL_LAYERS = {
-    "default": {"BACKEND": "channels_redis.core.RedisChannelLayer"},
-    "hosts": [("localhost", 6379)],
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+    },
 }
 LOGGING = {
     "version": 1,
@@ -116,10 +121,13 @@ DATABASES = {
         "NAME": "fpbp",
         "USER": "postgres",
         "PASSWORD": config("POSTGRES_PASSWORD"),
-        "HOST": "localhost",
+        "HOST": "db",
         "PORT": "5432",
     }
 }
+
+if "docker-compose" in os.environ:
+    DATABASES["default"]["HOST"] = "db"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

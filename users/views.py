@@ -1,15 +1,20 @@
+import json
+
 from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.http import JsonResponse
-from django.shortcuts import render, redirect
+from django.db.models import Q
+from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import ListView
 
 from core.mixins import RemoveCommentsMixin, DetailMixin
 from .forms import CustomUserChangeForm, PublishForm
-from .models import CustomUser, Followers, Publication
+from .models import CustomUser, Followers, Publication, Chat, ChatBlackList
 
 
 # ------------------------ Users Form ------------------------
@@ -120,6 +125,16 @@ class UserPageView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(request, **kwargs)
+        if request.GET.get("create_chat"):
+            recipient = CustomUser.objects.get(username=self.kwargs.get("username"))
+            try:
+                Chat.objects.get(
+                    Q(sender_id=request.user.id, recipient_id=recipient.id)
+                    | Q(sender_id=recipient.id, recipient_id=request.user.id)
+                )
+            except Chat.DoesNotExist:
+                Chat.objects.create(sender_id=request.user.id, recipient_id=recipient.id)
+            return redirect("chat/")
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -208,3 +223,97 @@ class PublicationDetailView(DetailMixin, View):
 class RemoveCommentPublication(RemoveCommentsMixin, View):
     def post(self, request, *args, **kwargs):
         return self.remove_comment(request, *args, **kwargs)
+
+
+# ------------------------ Chat Section ---------------------------
+
+
+class ConversationView(View):
+    model = Chat
+    template_name = "conversations/chat.html"
+
+    def get_context_data(self, request, **kwargs):
+        recipient = self.kwargs.get("username")
+        sender = request.user.username
+        chat = self.model.objects.get(
+            Q(sender__username=request.user.username, recipient__username=recipient)
+            | Q(sender__username=recipient, recipient__username=request.user.username)
+        )
+        messages = chat.message.filter().all()
+        context = {
+            "recipient": recipient,
+            "sender": sender,
+            "chat": chat,
+            "messages": messages,
+        }
+        return context
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(request, **kwargs)
+        chat = context.get("chat")
+        if "settings" in request.GET:
+            return redirect("settings/")
+        if chat:
+            black_list = ChatBlackList.objects.filter(user=request.user, chat_id=chat.id)
+            if black_list:
+                context["not_allowed"] = True
+            return render(request, self.template_name, context=context)
+        else:
+            return HttpResponse(
+                "Chat not found",
+                status=404,
+            )
+
+
+class ChatList(ListView):
+    model = Chat
+    template_name = "conversations/chat_list.html"
+
+    def get_queryset(self):
+        return Chat.objects.filter(Q(sender=self.request.user) | Q(recipient=self.request.user))
+
+
+class ChatSettings(View):
+    model = Chat
+    template_name = "conversations/chat_settings.html"
+
+    def get_context_data(self, **kwargs):
+        username = self.kwargs.get("username")
+        user = CustomUser.objects.get(username=username)
+        chat = self.model.objects.get(Q(recipient=user) | Q(sender=user))
+        return {"chat": chat, "user": user}
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        chat = context.get("chat")
+        user = context.get("user")
+        is_blocked = ChatBlackList.objects.filter(chat=chat, user=user).exists()
+        block_btn_value = "Unblock user" if is_blocked else "Block user"
+        context["block_btn_value"] = block_btn_value
+        return render(request, self.template_name, context)
+
+    @method_decorator(csrf_exempt)
+    def post(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        chat = context.get("chat")
+        user = context.get("user")
+        data = json.loads(request.body.decode("utf-8"))
+
+        action = data.get("action")
+        if action == "block_user":
+            bl_list, created = ChatBlackList.objects.get_or_create(user=user, chat_id=chat.id)
+            bl_list.save()
+            context["block_btn_value"] = "Unblock user"
+            response = {"status": "success", "action": "blocked"}
+        elif action == "unblock_user":
+            bl_list = ChatBlackList.objects.filter(user=user, chat_id=chat.id).first()
+            if bl_list:
+                bl_list.delete()
+                context["block_btn_value"] = "Block user"
+                response = {"status": "success", "action": "unblocked"}
+            else:
+                response = {"status": "error", "message": "Not found"}
+        else:
+            response = {"status": "error", "message": "Invalid action"}
+
+        return JsonResponse(response)

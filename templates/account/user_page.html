@@ -32,6 +32,9 @@
 <body>
 {% csrf_token %} <label id="username">{{ user.username }}</label><br>
 {% if request.user != user %}
+    <form method="get">
+        <button name="create_chat" value="create_chat" type="submit">Message</button>
+    </form>
 
     <button type="button" id="follow-button" data-action="{% if is_following %}unfollow{% else %}follow{% endif %}">
         {% if is_following %}Unfollow{% else %}Follow{% endif %}: {{ user.followers_count }}

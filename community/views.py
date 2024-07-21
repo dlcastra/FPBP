@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -16,9 +17,9 @@ from community.forms import CreateCommunityForm
 from community.models import Community, CommunityFollowers, CommunityFollowRequests, BlackList
 from core.decorators import owner_required
 from core.helpers import base_post_method
-from core.mixins import ViewWitsContext
+from core.mixins import ViewWitsContext, CommunityBaseContext
 from users.forms import PublishForm
-from users.models import Moderators, Publication
+from users.models import Moderators
 
 
 class CreateCommunityView(View):
@@ -46,7 +47,7 @@ class CommunityListView(ListView):
     template_name = "community/community_list.html"
 
 
-class CommunityView(ViewWitsContext):
+class CommunityView(CommunityBaseContext):
     """
     A view handler for displaying and interacting with the main community page.
     """
@@ -64,35 +65,28 @@ class CommunityView(ViewWitsContext):
             - author_id (int): Publication author's ID
         """
         context = super().get_context_data(request, **kwargs)
-        name = self.kwargs.get("name")
-        community_data = Community.objects.get(name=name)
 
         # PUBLICATION DATA
+        community_data = context["community_data"]
         author_id = community_data.admins.get(is_owner=True).user.id
         publication_form = PublishForm(initial={"author_id": author_id})
-        is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
-        is_admin = Moderators.objects.filter(user=self.request.user, is_admin=True).exists()
-        is_moderator = Moderators.objects.filter(user=self.request.user, is_moderator=True).exists()
 
         # FOLLOWERS DATA
-        community_followers = CommunityFollowers.objects.filter(community=community_data, is_follow=True).all()
+        community_followers = CommunityFollowers.objects.filter(
+            community=context["community_data"], is_follow=True
+        ).all()
         is_follow_user = CommunityFollowers.objects.filter(
-            community=community_data, is_follow=True, user=self.request.user.id
+            community=context["community_data"], is_follow=True, user=self.request.user.id
         ).all()
         request_status = CommunityFollowRequests.objects.filter(
-            community=community_data, user=self.request.user.id
+            community=context["community_data"], user=self.request.user.id
         ).all()
 
         # CONTEXT
         context["publication_form"] = publication_form
-        context["name"] = name
-        context["community_data"] = community_data
         context["community_followers"] = community_followers
         context["is_follow_user"] = is_follow_user
         context["request_status"] = request_status
-        context["is_owner"] = is_owner
-        context["is_admin"] = is_admin
-        context["is_moderator"] = is_moderator
         context["author_id"] = author_id
         return context
 
@@ -110,7 +104,8 @@ class CommunityView(ViewWitsContext):
             - is_follow_user (int): request user id
         """
         context = self.get_context_data(request, **kwargs)
-        context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
+        if request.user.is_authenticated:
+            context["follow_value"] = "Unfollow" if context["is_follow_user"].exists() else "Follow"
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -127,7 +122,8 @@ class CommunityView(ViewWitsContext):
         :return: JsonResponse, redirect to another class method or redirect to community home page:
             - If action is 'follow' or 'unfollow': redirect to handle_send_request_action
             - If action is 'send_request' or 'remove_request' end with success: {"success": true}
-            - If action is 'send_request' or 'remove_request' end without success: redirect to handle_send_request_action
+            - If action is 'send_request' or 'remove_request' end without success:
+                redirect to handle_send_request_action
             - If param is 'new_post' and form is valid: redirect to community home page
             - If param is 'new_post' and form is not valid: {"message": "Something went wrong"}
             - For other ways: redirect to community home page
@@ -162,7 +158,7 @@ class CommunityView(ViewWitsContext):
                 form.save()
                 community_data.posts.add(publication)
 
-                return redirect(f"/community/name-{context.get('name')}/")
+                return redirect(f"/community/name-{context.get('community_name')}/")
 
         else:
             messages.error(request, "Something went wrong")
@@ -212,7 +208,12 @@ class CommunityView(ViewWitsContext):
                 f"There is your new follow request: {request_obj.user.username}\n"
                 f'Check your follow request list: <a href="{follow_request_link}">Request List</a>.'
             )
-            Notification.objects.create(user=community.admins.get(is_owner=True).user, message=message)
+            Notification.objects.create(
+                user=community.admins.get(is_owner=True).user,
+                message=message,
+                content_type=ContentType.objects.get_for_model(Community),
+                object_id=community.id,
+            )
 
             request_obj.send_status = True
         request_obj.save()
@@ -284,7 +285,7 @@ class FollowersRequestListView(View):
         return JsonResponse({"success": "ok"})
 
 
-class AdminPanelView(ViewWitsContext):
+class AdminPanelView(CommunityBaseContext):
     """
     View to administrate community data and community users
     """
@@ -293,10 +294,8 @@ class AdminPanelView(ViewWitsContext):
 
     """
     What needs to be added:
-        1. Granting privileges (admin or moderator)
-        2. Removal of privileges
-        3. View recent activity
-        4. Possibility to delete/hide posts
+        1. View recent activity
+        2. Possibility to delete/hide posts
     """
 
     def get_context_data(self, request, **kwargs):
@@ -313,29 +312,18 @@ class AdminPanelView(ViewWitsContext):
             - all_posts (list): List of all community posts
         """
         context = super().get_context_data(request)
-        instance = get_object_or_404(Community, name=self.kwargs["name"])
-
-        # COMMUNITY MANAGERS DATA
-        context["owner"] = get_object_or_404(Moderators, is_owner=True, user_id=request.user.id)
-        context["admins"] = Moderators.objects.filter(is_admin=True)
-        context["moderators"] = Moderators.objects.filter(is_moderator=True)
-
-        if not context["admins"]:
-            context["admins"] = "You have no admins yet"
-        if not context["moderators"]:
-            context["moderators"] = "You have no moderators yet"
+        instance = context["community_instance"]
 
         # COMMUNITY BASE DATA
-        context["instance"] = instance
-        context["community_id"] = Community.objects.get(name=self.kwargs["name"]).id
         context["followers_count"] = CommunityFollowers.objects.filter(community=instance, is_follow=True).count()
-
-        # context["last_actions"] = ...
+        now = datetime.now()
+        time_48_hours_ago = now - timedelta(hours=48)
+        context["last_actions"] = instance.posts.filter(published_at__range=[time_48_hours_ago, now])
 
         # GET COMMUNITY PUBLICATIONS
         owner = instance.admins.filter(is_owner=True).first()
         if owner:
-            context["all_posts"] = list(Publication.objects.filter(author_id=owner.user.id).values())
+            context["all_posts"] = list(instance.posts.filter(author_id=owner.user.id).values())
         else:
             context["all_posts"] = "You don't have any publication, but you can change that right now!"
 
@@ -352,14 +340,15 @@ class AdminPanelView(ViewWitsContext):
 
         :return: Redirect to other views or render view template
             - If param request is 'edit': render edit_template
-            - If param request is 'followers_list': redirect to the UserManagementView view where all users will be displayed
+            - If param request is 'followers_list':
+                redirect to the UserManagementView view where all users will be displayed
             - For other ways: render view base template
         """
         context = self.get_context_data(request, **kwargs)
 
         if "edit" in request.GET:
             edit_template = "community/create_community.html"
-            form = CreateCommunityForm(instance=context["instance"])
+            form = CreateCommunityForm(instance=context["community_instance"])
             return render(request, edit_template, {"form": form})
 
         if "followers_list" in request.GET:
@@ -380,15 +369,11 @@ class AdminPanelView(ViewWitsContext):
         :return: Redirect to other views or render:
             - If request without any params: redirect to self
 
-            - If param request is 'put_ban' and request headers is 'XMLHttpRequest':
-            redirect to UserManagementView with param 'put_ban'
-
-            - If param request is 'remove_ban': redirect to UserManagementView with param 'remove_ban'
         """
         context = self.get_context_data(request, **kwargs)
 
         # CONTEXT VARIABLES
-        form = CreateCommunityForm(request.POST, instance=context["instance"])
+        form = CreateCommunityForm(request.POST, instance=context["community_instance"])
         edit_template = "community/create_community.html"
         redirect_url = request.path_info
         redirect_response = base_post_method(form, redirect_url)
@@ -396,68 +381,11 @@ class AdminPanelView(ViewWitsContext):
         if redirect_response:  # To edit community data
             return redirect_response
 
-        request_headers = request.headers.get("X-Requested-With")
-        request_action = json.loads(request.body)["action"]
-        if request_headers == "XMLHttpRequest" and request_action == "put_ban":  # To ban a user
-            return redirect("blacklist", name=self.kwargs["name"])
-
-        if "remove_ban" in request.POST:  # To unban a user
-            return redirect("blacklist", name=self.kwargs["name"])
-
         return render(request, edit_template, {"form": form})
 
 
-class UsersManagementView(ViewWitsContext):
+class UsersManagementView(CommunityBaseContext):
     template_name = "community/community_detail/admin_panel/users_list.html"
-
-    def get_context_data(self, request, **kwargs):
-        """
-        :return: Dictionary context:
-        - black_list (list): List of blacklisted users
-        - banned_users (list[dict[int, int, str, str]]): Info about the banned users
-            - id (int): User id
-            - blacklist_id (int): Database record ID
-            - username (str): User username
-            - reason (str): Reason why the user was blacklisted
-        - followers (list) List of subscribed users
-        - community (str): Community instance name
-        """
-        context = super().get_context_data(request)
-        # Special variables
-        community = get_object_or_404(Community, name=self.kwargs["name"])
-        followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
-        banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
-
-        # Community managers
-        context["owner"] = community.admins.get(is_owner=True)
-        context["admins"] = community.admins.filter(is_admin=True)
-        context["moderators"] = community.admins.filter(is_moderator=True)
-        if not context["admins"]:
-            context["admins"] = "You have no admins yet"
-        if not context["moderators"]:
-            context["moderators"] = "You have no moderators yet"
-
-        # Context variables
-        context["black_list"] = BlackList.objects.filter(community=community).select_related("user__user")
-        banned_users = [
-            {
-                "id": entry.user.id,
-                "blacklist_id": entry.id,
-                "username": entry.user.user.username,
-                "reason": entry.reason,
-            }
-            for entry in context["black_list"]
-        ]
-        context["banned_users"] = banned_users
-        context["followers"] = []
-        for follower in followers:
-            if follower.user.id not in banned_user_list:
-                context["followers"].append(follower)
-            elif not banned_user_list:
-                context["followers"] = followers
-        context["community"] = community
-
-        return context
 
     def get(self, request, *args, **kwargs):
         """
@@ -483,7 +411,7 @@ class UsersManagementView(ViewWitsContext):
             self.template_name,
             {
                 "banned_users": context["banned_users"],
-                "instance": context["community"],
+                "instance": context["community_instance"],
                 "followers": context["followers"],
                 "csrf_token": get_token(request),
             },
@@ -522,7 +450,7 @@ class UsersManagementView(ViewWitsContext):
         managers_list = {
             "admins": context["admins"],
             "moderators": context["moderators"],
-            "instance": context["community"],
+            "instance": context["community_instance"],
         }
 
         return render(request, list_template, managers_list)
@@ -610,19 +538,30 @@ class UsersManagementView(ViewWitsContext):
             user_id = data.get("follower_id")
             privilege = data.get("privilege")
             instance_name = data.get("instance")
-            print(instance_name)
             community = get_object_or_404(Community, name=instance_name)
 
-            if privilege == "Owner":
+            try:
+                owner = Moderators.objects.get(is_owner=True, user_id=request.user.id)
+                is_owner = Moderators.objects.filter(user=request.user, user__username=owner).exists()
+            except Moderators.DoesNotExist:
+                is_owner = False
+
+            try:
+                admin = Moderators.objects.get(is_admin=True, user_id=request.user.id)
+                is_admin = Moderators.objects.filter(user=request.user, user__username=admin).exists()
+            except Moderators.DoesNotExist:
+                is_admin = False
+
+            if privilege == "Owner" and is_owner:
                 ...
-            elif privilege == "Admin":
+            elif privilege == "Admin" and is_owner:
                 admin, created = Moderators.objects.get_or_create(user_id=user_id, is_admin=True)
                 if not community.admins.filter(id=admin.id, is_admin=True).exists():
                     admin.is_admin = True
                     admin.save()
                     community.admins.add(admin)
 
-            elif privilege == "Moderator":
+            elif privilege == "Moderator" and (is_owner or is_admin):
                 moderator, created = Moderators.objects.get_or_create(user_id=user_id, is_moderator=True)
                 if not community.admins.filter(id=moderator.id, is_admin=True).exists():
                     moderator.is_moderator = True

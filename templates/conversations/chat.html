@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <link rel="stylesheet" href="{% static 'styles/chat.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="{% static 'chat.js' %}"></script>
+</head>
+<body>
+<div id="chat-container-{{ chat.id }}" class="chat-container">
+    <form action="settings/" method="GET">
+
+        <button type="submit" value="settings" name="Settings">Settings</button>
+    </form>
+    <div class="message-container" id="message_container_{{ chat.id }}">
+        {% for message in messages %}
+            <div class="message {% if message.user.id == request.user.id %}sent{% else %}received{% endif %}">
+                <h5>{{ message.user.username }}</h5>
+                <p>{{ message.context }}</p>
+            </div>
+        {% endfor %}
+    </div>
+    {% if not_allowed == false %}
+    <form class="messageForm" data-chat-id="{{ chat.id }}">
+        <input type="hidden" id="chat_id_{{ chat.id }}" value="{{ chat.id }}">
+        <input type="hidden" id="user_id_{{ chat.id }}" value="{{ request.user.id }}">
+        <input type="hidden" id="sender_id_{{ chat.id }}" value="{{ request.user.id }}">
+        <input type="hidden" id="recipient_id_{{ chat.id }}" value="{{ chat.recipient.id }}">
+        <input type="text" id="username" value="{{ request.user.username }}" hidden>
+        <textarea id="context_{{ chat.id }}" placeholder="Type your message here..." required></textarea><br>
+        <input type="file" id="file_{{ chat.id }}" accept="image/*"><br>
+        <input type="file" id="voice_{{ chat.id }}" accept="audio/*"><br>
+        <button type="submit">Send</button>
+    </form>
+    {% else %}
+        <label> You cannot send message to this user</label>
+    {% endif %}
+</div>
+</body>
+</html>

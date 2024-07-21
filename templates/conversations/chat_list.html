@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="community-list">
+    {% for data in object_list %}
+
+        <a id="community-name"
+           href="/user-page/{% if data.recipient == request.user %}{{data.sender.username}}{% else %}{{data.recipient.username}}{% endif %}/chat/">{% if data.recipient == request.user %}{{data.sender.username}}{% else %}{{data.recipient.username}}{% endif %}</a>
+
+    {% endfor %}
+</div>
+</body>
+</html>

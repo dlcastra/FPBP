@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}My Site{% endblock %}</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-    <script src="/static/comments.js"></script>
-    <script src="/static/notifications.js"></script>
+    <script defer src="{% static 'comments.js' %}"></script>
+    <script defer src="{% static 'notifications.js' %}"></script>
     <style>
         #notification-list {
             display: none;
@@ -74,6 +75,7 @@
             <a href="/signup/">Sign Up</a>
         {% else %}
             <a href="/logout/">Sign Out</a>
+            <a href="/user-chats/">Chats</a>
         {% endif %}
         {% if request.user.is_authenticated %}
             <li><a href="/user-page/{{ request.user.username }}">Profile</a></li>

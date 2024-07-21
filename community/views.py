@@ -387,54 +387,6 @@ class AdminPanelView(CommunityBaseContext):
 class UsersManagementView(CommunityBaseContext):
     template_name = "community/community_detail/admin_panel/users_list.html"
 
-    # def get_context_data(self, request, **kwargs):
-    #     """
-    #     :return: Dictionary context:
-    #     - black_list (list): List of blacklisted users
-    #     - banned_users (list[dict[int, int, str, str]]): Info about the banned users
-    #         - id (int): User id
-    #         - blacklist_id (int): Database record ID
-    #         - username (str): User username
-    #         - reason (str): Reason why the user was blacklisted
-    #     - followers (list) List of subscribed users
-    #     - community (str): Community instance name
-    #     """
-    # context = super().get_context_data(request)
-    # Special variables
-    # community = get_object_or_404(Community, name=self.kwargs["name"])
-    # followers = CommunityFollowers.objects.filter(community=community, is_follow=True)
-    # banned_user_list = [banned_user.user.id for banned_user in BlackList.objects.filter(community=community)]
-
-    # Community managers
-    # context["owner"] = community.admins.get(is_owner=True)
-    # context["admins"] = community.admins.filter(is_admin=True)
-    # context["moderators"] = community.admins.filter(is_moderator=True)
-    # if not context["admins"]:
-    #     context["admins"] = "You have no admins yet"
-    # if not context["moderators"]:
-    #     context["moderators"] = "You have no moderators yet"
-
-    # Context variables
-    # context["black_list"] = BlackList.objects.filter(community=community).select_related("user__user")
-    # banned_users = [
-    #     {
-    #         "id": entry.user.id,
-    #         "blacklist_id": entry.id,
-    #         "username": entry.user.user.username,
-    #         "reason": entry.reason,
-    #     }
-    #     for entry in context["black_list"]
-    # ]
-    # context["banned_users"] = banned_users
-    # context["followers"] = []
-    # if banned_user_list:
-    #     context["followers"] = [follower for follower in followers if follower.user.id not in banned_user_list]
-    # else:
-    #     context["followers"] = followers
-    # context["community"] = community
-    #
-    # return context
-
     def get(self, request, *args, **kwargs):
         """
         Return data about banned users in a community.

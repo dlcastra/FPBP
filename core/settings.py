@@ -121,7 +121,7 @@ DATABASES = {
         "NAME": "fpbp",
         "USER": "postgres",
         "PASSWORD": config("POSTGRES_PASSWORD"),
-        "HOST": "localhost",
+        "HOST": "db",
         "PORT": "5432",
     }
 }

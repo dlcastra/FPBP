@@ -16,6 +16,7 @@ urlpatterns = [
     ######################### Chat Urls #################################
     path("user-chats/", views.ChatList.as_view(), name="user-chats"),
     path("user-page/<username>/chat/", views.ConversationView.as_view(), name="conversation"),
+    path("user-page/<username>/chat/settings/", views.ChatSettings.as_view(), name="conversation_settings"),
     ######################### Publication Urls ##########################
     path("user-page/<username>/new-publication/", views.CreatePublication.as_view(), name="new_publication"),
     path("publication/<int:pk>/", views.PublicationDetailView.as_view(), name="user_publication"),

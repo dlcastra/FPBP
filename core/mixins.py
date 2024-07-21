@@ -4,8 +4,10 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import TemplateView, View, DetailView
 from abc import ABC, abstractmethod
 
+from community.models import Community, BlackList, CommunityFollowers
 from core.helpers import post_request_details
 from app.models import Comments
+from users.models import Moderators
 
 
 class RenderOrRedirect(ABC, TemplateView):
@@ -173,3 +175,62 @@ class BlackListMixin(ABC, ViewWitsContext):
     @abstractmethod
     def get_model_class_form(self):
         pass
+
+
+class CommunityBaseContext(View):
+    def get_context_data(self, request, **kwargs):
+        context = {}
+        community_name = self.kwargs.get("name")
+        community_id = Community.objects.get(name=community_name).id
+        community_instance = get_object_or_404(Community, name=community_name)
+        community_data = Community.objects.get(name=community_name)
+
+        # Community base data: Name | ID | Instance
+        context["community_name"] = community_name
+        context["community_id"] = community_id
+        context["community_instance"] = community_instance
+        context["community_data"] = community_data
+
+        # Owner | Admin | Moderator
+        context["owner"] = community_instance.admins.get(is_owner=True)
+        context["admins"] = community_instance.admins.filter(is_admin=True)
+        context["moderators"] = community_instance.admins.filter(is_moderator=True)
+        if not context["admins"]:
+            context["admins"] = "You have no admins yet"
+        if not context["moderators"]:
+            context["moderators"] = "You have no moderators yet"
+
+        if request.user.is_authenticated:
+            is_owner = Moderators.objects.filter(user=self.request.user, is_owner=True).exists()
+            is_admin = Moderators.objects.filter(user=self.request.user, is_admin=True).exists()
+            is_moderator = Moderators.objects.filter(user=self.request.user, is_moderator=True).exists()
+            context["is_owner"] = is_owner
+            context["is_admin"] = is_admin
+            context["is_moderator"] = is_moderator
+
+        # Community black list
+        context["black_list"] = BlackList.objects.filter(community=community_instance).select_related("user__user")
+        banned_user_list = [
+            banned_user.user.id for banned_user in BlackList.objects.filter(community=community_instance)
+        ]
+
+        banned_users = [
+            {
+                "id": entry.user.id,
+                "blacklist_id": entry.id,
+                "username": entry.user.user.username,
+                "reason": entry.reason,
+            }
+            for entry in context["black_list"]
+        ]
+        context["banned_users"] = banned_users
+
+        # Community followers
+        followers = CommunityFollowers.objects.filter(community=community_instance, is_follow=True)
+        context["followers"] = []
+        if banned_user_list:
+            context["followers"] = [follower for follower in followers if follower.user.id not in banned_user_list]
+        else:
+            context["followers"] = followers
+
+        return context

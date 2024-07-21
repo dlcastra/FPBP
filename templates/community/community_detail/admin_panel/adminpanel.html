@@ -13,7 +13,7 @@
 <br>
 
 <p>Owner: {{ owner }}</p>
-<p><a href="{% url 'users_management' name=instance %}?managers_list">Admins and moderators</a></p>
+<p><a href="{% url 'users_management' name=community_instance %}?managers_list">Admins and moderators</a></p>
 
 <p>Last actions:</p>
 {% for action in last_actions %}

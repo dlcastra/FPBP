@@ -74,7 +74,7 @@
 
 {% for admin in community_data.admins.all %}
     {% if user.id == admin.user.id %}
-        <a href="/community/name-{{ name }}/admin-panel/">Admin panel</a>
+        <a href="/community/name-{{ community_name }}/admin-panel/">Admin panel</a>
         <div id="publication-form">
             {% include "publications/create_publication.html" with form=publication_form %}
         </div>

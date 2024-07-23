@@ -21,7 +21,8 @@ application = ProtocolTypeRouter(
                     [
                         re_path(r"ws/notify/$", NotificationConsumer.as_asgi()),
                         re_path(r"ws/comments/$", CommentsConsumer.as_asgi()),
-                        re_path(r"ws/message/$", ChatConsumer.as_asgi()),
+                        # re_path(r"ws/message/$", ChatConsumer.as_asgi()),
+                        re_path(r"ws/chat/(?P<chat_id>\d+)/$", ChatConsumer.as_asgi()),
                     ]
                 )
             )

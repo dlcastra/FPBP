@@ -126,11 +126,11 @@ class DetailMixin(ABC, DetailView):
         template = self.render_main_template()
         user_checker = request.user.is_authenticated and request.user.id == context["model_detail"].author_id
 
-        # if "edit" in request.GET and user_checker:
-        #     edit_template = self.render_edit_template()
-        #     form_class = self.get_form_class()
-        #     form = form_class(instance=self.get_object())
-        #     return render(request, edit_template, {"form": form, **context})
+        if "edit" in request.GET and user_checker:
+            edit_template = self.render_edit_template()
+            form_class = self.get_form_class()
+            form = form_class(instance=self.get_object())
+            return render(request, edit_template, {"form": form, **context})
 
         return render(request, template, context)
 

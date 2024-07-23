@@ -10,16 +10,19 @@
     <script defer src="{% static 'chat.js' %}"></script>
 </head>
 <body>
+<input type="hidden" id="chat_id" value="{{ chat.id }}">
 <div id="chat-container-{{ chat.id }}" class="chat-container">
     <form action="settings/" method="GET">
-
         <button type="submit" value="settings" name="Settings">Settings</button>
     </form>
     <div class="message-container" id="message_container_{{ chat.id }}">
         {% for message in messages %}
-            <div class="message {% if message.user.id == request.user.id %}sent{% else %}received{% endif %}">
+            <div class="message {% if message.user.id == request.user.id %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
                 <h5>{{ message.user.username }}</h5>
                 <p>{{ message.context }}</p>
+                {% if message.user.id == request.user.id %}
+                    <button class="delete-message-btn" data-message-id="{{ message.id }}">Delete</button>
+                {% endif %}
             </div>
         {% endfor %}
     </div>

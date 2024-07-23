@@ -99,21 +99,33 @@ class CommentsConsumer(AsyncWebsocketConsumer):
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "chat_room"
+        # Use chat_id to create a unique group name if necessary
+        self.chat_id = self.scope["url_route"]["kwargs"]["chat_id"]
+        self.group_name = f"chat_{self.chat_id}"
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        logger.info("WebSocket connected")
+        logger.info(f"WebSocket connected to group: {self.group_name}")
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
         logger.info(f"WebSocket disconnected from group: {self.group_name}")
 
     async def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
+        logger.info(f"Received data: {data}")
+
+        action_type = data.get("type")
+
+        if action_type == "chat_message":
+            await self.handle_send_message(data)
+        elif action_type == "delete_message":
+            await self.handle_delete_message(data)
+
+    async def handle_send_message(self, data):
         from users.models import Chat, CustomUser
         from app.models import Notification
 
-        data = json.loads(text_data)
-        logger.info(f"Received data: {data}")
         chat_id = data.get("chatId")
         recipient = data.get("recipient")
         user_id = data.get("user_id")
@@ -139,53 +151,85 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         # Create message related to chat
-        message = await sync_to_async(chat.message.create)(
-            context=context,
-            attachment=attachment,
-            voice=voice,
-            user=user,
-        )
+        try:
+            message = await sync_to_async(chat.message.create)(
+                context=context,
+                attachment=attachment,
+                voice=voice,
+                user=user,
+            )
+        except Exception as e:
+            logger.error(f"Failed to create message: {e}")
+            return
 
         username = user.username
         response = {
-            "type": "send_message",
+            "type": "chat_message",
             "message": {
                 "context": message.context,
                 "username": username,
                 "date": message.date_added.isoformat(),
                 "chatId": chat_id,
+                "message_id": message.id,  # Ensure message ID is included
+                "user_id": user_id,
             },
         }
-        chat_content = await sync_to_async(ContentType.objects.get_for_model)(
-            Chat,
-        )
-        notif, created = await sync_to_async(Notification.objects.get_or_create)(
-            user_id=recipient,
-            content_type=chat_content,
-            object_id=chat.id,
-        )
-        message_counter = await sync_to_async(chat.message.filter(user_id=recipient).count)()
-
-        if created:
-            notif.message = f"You got a new message {message_counter}"
-        else:
-            notif.message = f"You got a new message {message_counter}"
-
-        await sync_to_async(notif.save)()
 
         if message.voice:
-            response["voice_url"] = message.voice.url
+            response["message"]["voice_url"] = message.voice.url
         if message.attachment:
-            response["attachment_url"] = message.attachment.url
+            response["message"]["attachment_url"] = message.attachment.url
 
-        await self.channel_layer.group_send(self.group_name, response)
-        notification_event = {
-            "type": "send_notification",
-            "message": notif.message,
-            "id": notif.id,
-        }
-        await self.channel_layer.group_send("notification_room", notification_event)
+        await self.channel_layer.group_send(self.group_name, {"type": "send_message", "data": response})
+
+        # Handle notification logic
+        try:
+            chat_content = await sync_to_async(ContentType.objects.get_for_model)(Chat)
+            notif, created = await sync_to_async(Notification.objects.get_or_create)(
+                user_id=recipient,
+                content_type=chat_content,
+                object_id=chat.id,
+            )
+            message_counter = await sync_to_async(chat.message.filter(user_id=recipient).count)()
+
+            notif.message = f"You got a new message {message_counter}"
+            await sync_to_async(notif.save)()
+
+            notification_event = {
+                "type": "send_notification",
+                "message": notif.message,
+                "id": notif.id,
+            }
+            await self.channel_layer.group_send("notification_room", notification_event)
+
+        except Exception as e:
+            logger.error(f"Failed to create notification: {e}")
+
+    async def handle_delete_message(self, data):
+        from users.models import Message
+
+        message_id = data["message_id"]
+        user_id = data["user_id"]
+
+        try:
+            # Ensure the user is the owner of the message
+            message = await sync_to_async(Message.objects.get)(id=message_id, user_id=user_id)
+            await sync_to_async(message.delete)()
+
+            # Notify the group about the deletion
+            await self.channel_layer.group_send(self.group_name, {"type": "delete_message", "message_id": message_id})
+
+        except Message.DoesNotExist:
+            logger.error(f"Message {message_id} not found or user {user_id} is not the owner")
 
     async def send_message(self, event):
-        await self.send(text_data=json.dumps(event))
-        logger.info(f"Sent message: {event}")
+        data = event["data"]
+        await self.send(text_data=json.dumps(data))
+        logger.info(f"Sent message: {data}")
+
+    async def delete_message(self, event):
+        message_id = event["message_id"]
+
+        # Send delete notification to WebSocket
+        await self.send(text_data=json.dumps({"type": "delete_message", "message_id": message_id}))
+        logger.info(f"Deleted message: {message_id}")
